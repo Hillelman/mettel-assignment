@@ -1,6 +1,6 @@
 # Conflict-Aware Scheduler
 
-A single-page weekly calendar for managing appointments and guarantee no overlapping. Browse weeks, create, edit and delete appointments, drag them to a new time or day in 15-minute steps, and resize them from the top or bottom edge. Conflicts in appointments are detected and can be resolved before they are saved. Data is kept in the browser's localStorage.
+A single-page weekly calendar for managing appointments and guarantee no overlapping. Create, edit and delete appointments, drag them to a new time in 15-minute steps, and resize them to adjust its duration. Conflicts in appointments are detected and can be resolved before they are saved. Data is kept in the browser's localStorage.
 
 <img width="1680" height="1002" alt="Screenshot 2026-11-12 at 15 53 22" src="https://github.com/user-attachments/assets/6f72b1a0-e66e-47ed-bc82-3deb9f2a8d5d" />
 
