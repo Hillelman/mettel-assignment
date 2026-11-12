@@ -7,7 +7,7 @@ const DAY_PREFIX = 'day:'
 
 export type ResizeEdge = 'start' | 'end'
 
-export type DragTarget =
+type DragTarget =
   | {
       kind: 'move'
       appointmentId: string

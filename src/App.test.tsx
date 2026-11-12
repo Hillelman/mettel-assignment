@@ -130,6 +130,11 @@ describe('README', () => {
     expect(readme).toMatch(/^## How to use$/m)
   })
 
+  it('mentions resizing from the top and bottom edges and multi-day appointments', () => {
+    expect(readme).toMatch(/resize[^.]*top[^.]*bottom\s+edge/i)
+    expect(readme).toMatch(/multi-day appointments/i)
+  })
+
   it('only lists scripts that exist in package.json', () => {
     const listed = [...readme.matchAll(/`bun run ([\w:-]+)`/g)].map(
       (match) => match[1],
