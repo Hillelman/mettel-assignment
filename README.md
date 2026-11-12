@@ -3,8 +3,9 @@
 ## Description
 
 A single-page weekly calendar for managing appointments. Browse weeks, create,
-edit and delete appointments, drag them to a new time or day, and drag the
-bottom edge to resize. Overlapping appointments are detected and can be
+edit and delete appointments (including ones that run past midnight), drag them
+to a new time or day in 15-minute steps, and resize them from the top or bottom
+edge. Overlapping appointments are detected and can be
 resolved before they are saved. Data is kept in the browser's localStorage.
 
 ## Tech stack
@@ -30,17 +31,25 @@ The app is served at http://localhost:5173 by default.
 
 - **Navigate**: use the arrows to move between weeks and **Today** to return to
   the current week.
-- **Create**: click **New appointment**, fill in the title, date, start and end
-  (and optional notes), then **Save**.
+- **Create**: click **New appointment** or an empty hour, fill in the title,
+  start and end date and time (and optional notes), then **Save**. The form
+  checks the values only when you press **Save**, and clears each error as soon
+  as you fix that field.
+- **Multi-day appointments**: set the end date after the start date. The
+  appointment shows a segment in every day it touches.
 - **Edit / delete**: click an appointment to open it. Change the fields and
   **Save**, or choose **Delete** and confirm.
-- **Move**: drag an appointment to another time slot or day. With the keyboard,
-  focus it, press Space, use the arrow keys, then Space again to drop.
-- **Resize**: drag the bottom edge of an appointment to change its end time.
-- **Conflicts**: when an appointment overlaps another (or does not fit in the
-  day), a dialog lists the overlaps and offers **Cancel** (discard the change),
-  **Edit times** (back to the form) or **Move to ...** (the next free slot that
-  day).
+- **Move**: drag an appointment to another time or day. It snaps to 15-minute
+  steps and keeps its duration. Dragging any segment of a multi-day appointment
+  moves the whole appointment. With the keyboard, focus it, press Space, use
+  Up and Down for 15 minutes and Left and Right for one day, then Space again to
+  drop.
+- **Resize**: drag the top edge to change the start or the bottom edge to change
+  the end, also into another day's column to make it span days. Edges snap to
+  15 minutes and keep at least 15 minutes between them.
+- **Conflicts**: when an appointment overlaps another, a dialog lists the
+  overlaps and offers **Cancel** (discard the change), **Edit times** (back to
+  the form) or **Move to ...** (the nearest free slot within a week).
 - **Persistence**: appointments are saved to localStorage automatically and are
   restored when you reload the page.
 

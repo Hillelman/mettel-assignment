@@ -19,13 +19,17 @@ import {
 import { useCalendar } from '@/context/useCalendar'
 import { segmentsForDay, type DaySegment } from '@/lib/conflicts'
 import { weekDays } from '@/lib/dates'
-import { DayColumn } from './DayColumn'
+import { DayColumn, type ResizeState } from './DayColumn'
 import { DAY_HEADER_HEIGHT_CLASS } from './grid'
 import { DragPreview } from './DragPreview'
 import { HourGutter } from './HourGutter'
-import { applyDragEnd } from './dragActions'
-import { parseDragId } from './dragIds'
-import { keyboardCoordinates, slotUnderCardTop } from './dragSupport'
+import { applyDragEnd, resizeTarget } from './dragActions'
+import { parseDayId, parseDragId } from './dragIds'
+import {
+  dayUnderDraggedEdge,
+  keyboardCoordinates,
+  toDragInput,
+} from './dragSupport'
 
 const KEYBOARD_CODES = {
   start: ['Space'],
@@ -38,9 +42,7 @@ export function WeekGrid() {
   const days = useMemo(() => weekDays(weekStart), [weekStart])
   const scrollRef = useRef<HTMLDivElement>(null)
   const [movingId, setMovingId] = useState<string | null>(null)
-  const [resizing, setResizing] = useState<{ id: string; deltaY: number } | null>(
-    null,
-  )
+  const [resizing, setResizing] = useState<ResizeState | null>(null)
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -71,15 +73,23 @@ export function WeekGrid() {
     const drag = parseDragId(String(active.id))
     if (drag?.kind === 'move') setMovingId(drag.appointmentId)
     if (drag?.kind === 'resize') {
-      setResizing({ id: drag.appointmentId, deltaY: 0 })
+      setResizing({ id: drag.appointmentId, preview: null })
     }
   }
 
-  const handleDragMove = ({ active, delta }: DragMoveEvent) => {
-    const drag = parseDragId(String(active.id))
-    if (drag?.kind === 'resize') {
-      setResizing({ id: drag.appointmentId, deltaY: delta.y })
-    }
+  const handleDragMove = (event: DragMoveEvent) => {
+    const drag = parseDragId(String(event.active.id))
+    if (drag?.kind !== 'resize') return
+    const appointment = appointments.find((item) => item.id === drag.appointmentId)
+    const { overId, offsetPx } = toDragInput(event)
+    const date = overId === null ? null : parseDayId(overId)
+    setResizing({
+      id: drag.appointmentId,
+      preview:
+        appointment && date
+          ? { ...appointment, ...resizeTarget(appointment, drag.edge, date, offsetPx) }
+          : null,
+    })
   }
 
   const clearDrag = () => {
@@ -87,30 +97,22 @@ export function WeekGrid() {
     setResizing(null)
   }
 
-  const handleDragEnd = ({ active, over, delta }: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     clearDrag()
-    applyDragEnd(
-      {
-        activeId: String(active.id),
-        overId: over ? String(over.id) : null,
-        deltaY: delta.y,
-      },
-      appointments,
-      requestSave,
-    )
+    applyDragEnd(toDragInput(event), appointments, requestSave)
   }
 
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={slotUnderCardTop}
+      collisionDetection={dayUnderDraggedEdge}
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={clearDrag}
     >
       <div ref={scrollRef} className="h-full min-h-0 overflow-auto">
-        <div className="grid grid-cols-1 gap-1 md:grid-cols-[auto_repeat(7,minmax(0,1fr))]">
+        <div className="grid grid-cols-1 md:grid-cols-[auto_repeat(7,minmax(0,1fr))] md:divide-x md:divide-border">
           <div className="hidden md:block" data-testid="week-hour-gutter">
             <div
               className={`${DAY_HEADER_HEIGHT_CLASS} sticky top-0 z-20 bg-background`}
