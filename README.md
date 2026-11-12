@@ -1,4 +1,4 @@
-# Weekly Calendar
+# Conflict-Aware Scheduler
 
 ## Description
 
