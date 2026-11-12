@@ -1,4 +1,4 @@
-import { HOUR_HEIGHT_PX, MIN_DURATION_MINUTES, STEP_MINUTES } from '@/config'
+import { STEP_MINUTES } from '@/config'
 import { isValidISODate } from './dates'
 
 export const MINUTES_PER_DAY = 24 * 60
@@ -70,19 +70,4 @@ export function snapToStep(minutes: number): number {
 
 export function durationMinutes(range: { start: string; end: string }): number {
   return toWallMinutes(range.end) - toWallMinutes(range.start)
-}
-
-/**
- * New end after dragging the resize handle by `deltaPx`.
- * Snapped to the step and at least MIN_DURATION after the start.
- */
-export function resizeEnd(
-  start: string,
-  originalEnd: string,
-  deltaPx: number,
-): string {
-  const deltaMinutes = (deltaPx / HOUR_HEIGHT_PX) * 60
-  const snapped = snapToStep(toWallMinutes(originalEnd) + deltaMinutes)
-  const minEnd = toWallMinutes(start) + MIN_DURATION_MINUTES
-  return fromWallMinutes(Math.max(snapped, minEnd))
 }

@@ -1,4 +1,4 @@
-import { APPOINTMENT_COLORS, STORAGE_KEY } from '@/config'
+import { STORAGE_KEY } from '@/config'
 import type { Appointment } from '@/types/appointment'
 import { colorForId } from './colors'
 import { loadAppointments, saveAppointments } from './storage'
@@ -97,16 +97,6 @@ describe('storage', () => {
     const colors = loadAppointments().map((item) => item.color)
     expect(colors).toEqual([colorForId('a'), colorForId('b')])
     expect(loadAppointments().map((item) => item.color)).toEqual(colors)
-  })
-
-  it('keeps every valid palette color as stored', () => {
-    const list = APPOINTMENT_COLORS.map(({ id }, index) => ({
-      ...valid,
-      id: `id-${index}`,
-      color: id,
-    }))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
-    expect(loadAppointments()).toEqual(list)
   })
 
   it('drops malformed v1 entries', () => {

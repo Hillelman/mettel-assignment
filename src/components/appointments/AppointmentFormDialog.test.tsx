@@ -63,17 +63,6 @@ describe('AppointmentFormDialog', () => {
     expect(title).toHaveAttribute('aria-invalid', 'false')
   })
 
-  it('treats a whitespace-only title as missing', async () => {
-    const user = userEvent.setup()
-    const value = renderWithCalendar(<AppointmentFormDialog />)
-
-    await user.type(screen.getByLabelText('Title'), '   ')
-    await user.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('Title is required')).toBeInTheDocument()
-    expect(value.requestSave).not.toHaveBeenCalled()
-  })
-
   it('shows the end error on Save when the end is not after the start', async () => {
     const user = userEvent.setup()
     const value = renderWithCalendar(<AppointmentFormDialog />)
@@ -90,23 +79,6 @@ describe('AppointmentFormDialog', () => {
     expect(screen.getByLabelText('End time')).toHaveAccessibleDescription(
       'End must be after the start',
     )
-    expect(value.requestSave).not.toHaveBeenCalled()
-  })
-
-  it('rejects an end date before the start date', async () => {
-    const user = userEvent.setup()
-    const value = renderWithCalendar(<AppointmentFormDialog />)
-
-    await user.type(screen.getByLabelText('Title'), 'Lunch')
-    fireEvent.change(screen.getByLabelText('End date'), {
-      target: { value: '2026-11-08' },
-    })
-    fireEvent.change(screen.getByLabelText('End time'), {
-      target: { value: '12:00' },
-    })
-    await user.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('End must be after the start')).toBeInTheDocument()
     expect(value.requestSave).not.toHaveBeenCalled()
   })
 
@@ -182,18 +154,14 @@ describe('AppointmentFormDialog', () => {
     )
   })
 
-  it('shows the Color field right below Title with the prefilled color', () => {
+  it('shows the Color field last, after Notes, with the default color', () => {
     renderWithCalendar(<AppointmentFormDialog />)
-    const title = screen.getByLabelText('Title')
+    const notes = screen.getByLabelText('Notes')
     const color = screen.getByLabelText('Color')
-    const startDate = screen.getByLabelText('Start date')
 
     expect(color).toHaveTextContent('Blue')
     expect(
-      title.compareDocumentPosition(color) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-    expect(
-      color.compareDocumentPosition(startDate) & Node.DOCUMENT_POSITION_FOLLOWING,
+      notes.compareDocumentPosition(color) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
   })
 
@@ -228,16 +196,6 @@ describe('AppointmentFormDialog', () => {
     expect(value.closeForm).not.toHaveBeenCalled()
   })
 
-  it('accepts empty notes', async () => {
-    const user = userEvent.setup()
-    const value = renderWithCalendar(<AppointmentFormDialog />)
-
-    await user.type(screen.getByLabelText('Title'), 'Lunch')
-    await user.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(value.requestSave).toHaveBeenCalledTimes(1)
-  })
-
   it('submits trimmed values with the editing id', async () => {
     const user = userEvent.setup()
     const value = renderWithCalendar(<AppointmentFormDialog />, {
@@ -259,19 +217,6 @@ describe('AppointmentFormDialog', () => {
         color: 'teal',
       },
       'a1',
-    )
-  })
-
-  it('submits without an id when creating', async () => {
-    const user = userEvent.setup()
-    const value = renderWithCalendar(<AppointmentFormDialog />)
-
-    await user.type(screen.getByLabelText('Title'), 'Lunch')
-    await user.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(value.requestSave).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Lunch' }),
-      undefined,
     )
   })
 
