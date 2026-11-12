@@ -17,8 +17,8 @@ import {
   TOUCH_DRAG_DELAY_MS,
 } from '@/config'
 import { useCalendar } from '@/context/useCalendar'
+import { segmentsForDay, type DaySegment } from '@/lib/conflicts'
 import { weekDays } from '@/lib/dates'
-import type { Appointment } from '@/types/appointment'
 import { DayColumn } from './DayColumn'
 import { DAY_HEADER_HEIGHT_CLASS } from './grid'
 import { DragPreview } from './DragPreview'
@@ -60,13 +60,9 @@ export function WeekGrid() {
   )
 
   const byDay = useMemo(() => {
-    const groups = new Map<string, Appointment[]>(
-      days.map((date) => [date, []]),
+    return new Map<string, DaySegment[]>(
+      days.map((date) => [date, segmentsForDay(appointments, date)]),
     )
-    for (const appointment of appointments) {
-      groups.get(appointment.date)?.push(appointment)
-    }
-    return groups
   }, [appointments, days])
 
   const moving = appointments.find((item) => item.id === movingId) ?? null
@@ -125,7 +121,7 @@ export function WeekGrid() {
             <DayColumn
               key={date}
               date={date}
-              appointments={byDay.get(date) ?? []}
+              segments={byDay.get(date) ?? []}
               resizing={resizing}
             />
           ))}

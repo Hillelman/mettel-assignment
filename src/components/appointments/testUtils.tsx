@@ -19,9 +19,8 @@ export function createCalendarValue(
       editingId: null,
       values: {
         title: '',
-        date: '2026-11-09',
-        start: '10:00',
-        end: '11:00',
+        start: '2026-11-09T10:00',
+        end: '2026-11-09T11:00',
         notes: '',
       },
     },

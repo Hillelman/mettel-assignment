@@ -1,20 +1,33 @@
-import { STEP_MINUTES } from '@/config'
+import { SLOT_SEARCH_DAYS, STEP_MINUTES } from '@/config'
 import type { Appointment } from '@/types/appointment'
-import { MINUTES_PER_DAY, durationMinutes, fromMinutes, toMinutes } from './time'
+import {
+  MINUTES_PER_DAY,
+  durationMinutes,
+  fromWallMinutes,
+  toDateTime,
+  toWallMinutes,
+} from './time'
 
-type TimeRange = Pick<Appointment, 'date' | 'start' | 'end'>
+type TimeRange = Pick<Appointment, 'start' | 'end'>
 
 export type Slot = { start: string; end: string }
 
 export type DayLayout = { column: number; columns: number }
 
-/** Same date and overlapping times. Back-to-back ranges do not overlap. */
+/** The part of an appointment that falls on one day. Minutes are since that day's 00:00. */
+export type DaySegment = {
+  appointment: Appointment
+  startMinutes: number
+  endMinutes: number
+  /** The segment holds the appointment's start. */
+  isFirst: boolean
+  /** The segment holds the appointment's end. */
+  isLast: boolean
+}
+
+/** Overlapping date-times. Back-to-back ranges do not overlap. */
 export function overlaps(a: TimeRange, b: TimeRange): boolean {
-  return (
-    a.date === b.date &&
-    toMinutes(a.start) < toMinutes(b.end) &&
-    toMinutes(b.start) < toMinutes(a.end)
-  )
+  return a.start < b.end && b.start < a.end
 }
 
 /** All appointments overlapping `proposed`, leaving out the one with `ignoreId`. */
@@ -29,15 +42,10 @@ export function findConflicts(
   )
 }
 
-/** True when the proposed range starts and ends within the same day. */
-export function fitsInDay(proposed: Pick<Appointment, 'start' | 'end'>): boolean {
-  return toMinutes(proposed.start) >= 0 && toMinutes(proposed.end) <= MINUTES_PER_DAY
-}
-
 /**
- * Nearest free slot on the same date with the same duration, in STEP_MINUTES
- * steps, searching forward from the proposed start and then backward.
- * Ties go to the forward slot. Null when the day has no room.
+ * Nearest free slot with the same duration, in STEP_MINUTES steps, searching
+ * forward from the proposed start and then backward, up to SLOT_SEARCH_DAYS
+ * each way. Ties go to the forward slot. Null when nothing nearby is free.
  */
 export function findNextFreeSlot(
   proposed: TimeRange,
@@ -45,27 +53,27 @@ export function findNextFreeSlot(
   ignoreId?: string,
 ): Slot | null {
   const duration = durationMinutes(proposed)
-  if (duration <= 0 || duration > MINUTES_PER_DAY) return null
+  if (duration <= 0) return null
 
-  const others = all.filter(
-    (appointment) =>
-      appointment.id !== ignoreId && appointment.date === proposed.date,
-  )
-  const origin = toMinutes(proposed.start)
-  const latestStart = MINUTES_PER_DAY - duration
+  const others = all
+    .filter((appointment) => appointment.id !== ignoreId)
+    .map((appointment) => ({
+      start: toWallMinutes(appointment.start),
+      end: toWallMinutes(appointment.end),
+    }))
+  const origin = toWallMinutes(proposed.start)
 
   const isFree = (start: number): boolean =>
-    start >= 0 &&
-    start <= latestStart &&
-    !others.some(
-      (other) =>
-        start < toMinutes(other.end) && toMinutes(other.start) < start + duration,
-    )
+    !others.some((other) => start < other.end && other.start < start + duration)
 
-  for (let offset = 0; offset <= MINUTES_PER_DAY; offset += STEP_MINUTES) {
+  const maxOffset = SLOT_SEARCH_DAYS * MINUTES_PER_DAY
+  for (let offset = 0; offset <= maxOffset; offset += STEP_MINUTES) {
     for (const start of [origin + offset, origin - offset]) {
       if (isFree(start)) {
-        return { start: fromMinutes(start), end: fromMinutes(start + duration) }
+        return {
+          start: fromWallMinutes(start),
+          end: fromWallMinutes(start + duration),
+        }
       }
     }
   }
@@ -73,22 +81,45 @@ export function findNextFreeSlot(
 }
 
 /**
- * Side-by-side layout for one day. Appointments that overlap, directly or
- * through a chain, share a cluster; each gets a column and the cluster's
- * column count.
+ * The segments of `appointments` that fall on `date`, in input order. An
+ * appointment ending exactly at 00:00 has no segment on that next day.
  */
-export function layoutDay(appointments: Appointment[]): Map<string, DayLayout> {
-  const sorted = [...appointments].sort(
-    (a, b) =>
-      a.date.localeCompare(b.date) ||
-      toMinutes(a.start) - toMinutes(b.start) ||
-      toMinutes(a.end) - toMinutes(b.end),
+export function segmentsForDay(
+  appointments: Appointment[],
+  date: string,
+): DaySegment[] {
+  const dayStart = toWallMinutes(toDateTime(date, '00:00'))
+  const dayEnd = dayStart + MINUTES_PER_DAY
+
+  const segments: DaySegment[] = []
+  for (const appointment of appointments) {
+    const start = toWallMinutes(appointment.start)
+    const end = toWallMinutes(appointment.end)
+    if (start >= dayEnd || end <= dayStart) continue
+    segments.push({
+      appointment,
+      startMinutes: Math.max(start, dayStart) - dayStart,
+      endMinutes: Math.min(end, dayEnd) - dayStart,
+      isFirst: start >= dayStart,
+      isLast: end <= dayEnd,
+    })
+  }
+  return segments
+}
+
+/**
+ * Side-by-side layout for the segments of one day. Segments that overlap,
+ * directly or through a chain, share a cluster; each appointment gets a
+ * column and the cluster's column count.
+ */
+export function layoutDay(segments: DaySegment[]): Map<string, DayLayout> {
+  const sorted = [...segments].sort(
+    (a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes,
   )
 
   const result = new Map<string, DayLayout>()
   let cluster: { id: string; column: number }[] = []
   let columnEnds: number[] = []
-  let clusterDate = ''
   let clusterEnd = 0
 
   const flush = () => {
@@ -99,22 +130,14 @@ export function layoutDay(appointments: Appointment[]): Map<string, DayLayout> {
     columnEnds = []
   }
 
-  for (const appointment of sorted) {
-    const start = toMinutes(appointment.start)
-    const end = toMinutes(appointment.end)
+  for (const { appointment, startMinutes, endMinutes } of sorted) {
+    if (cluster.length > 0 && startMinutes >= clusterEnd) flush()
+    if (cluster.length === 0) clusterEnd = endMinutes
 
-    if (cluster.length > 0 && (appointment.date !== clusterDate || start >= clusterEnd)) {
-      flush()
-    }
-    if (cluster.length === 0) {
-      clusterDate = appointment.date
-      clusterEnd = end
-    }
-
-    let column = columnEnds.findIndex((columnEnd) => columnEnd <= start)
+    let column = columnEnds.findIndex((columnEnd) => columnEnd <= startMinutes)
     if (column === -1) column = columnEnds.length
-    columnEnds[column] = end
-    clusterEnd = Math.max(clusterEnd, end)
+    columnEnds[column] = endMinutes
+    clusterEnd = Math.max(clusterEnd, endMinutes)
     cluster.push({ id: appointment.id, column })
   }
   flush()

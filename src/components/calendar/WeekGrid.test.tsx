@@ -21,7 +21,11 @@ function renderGrid(appointments: Appointment[] = []) {
     form: {
       open: false,
       editingId: null,
-      values: { title: '', date: WEEK_START, start: '09:00', end: '10:00' },
+      values: {
+        title: '',
+        start: `${WEEK_START}T09:00`,
+        end: `${WEEK_START}T10:00`,
+      },
     },
     openCreate: vi.fn(),
     openEdit: vi.fn(),
@@ -43,9 +47,8 @@ function renderGrid(appointments: Appointment[] = []) {
 const review: Appointment = {
   id: 'a1',
   title: 'Review',
-  date: '2026-11-11',
-  start: '09:30',
-  end: '11:00',
+  start: '2026-11-11T09:30',
+  end: '2026-11-11T11:00',
 }
 
 describe('WeekGrid', () => {
@@ -75,8 +78,7 @@ describe('WeekGrid', () => {
       screen.getByRole('button', { name: 'New appointment on 2026-11-09 at 00:00' }),
     )
     expect(calendar.openCreate).toHaveBeenCalledWith({
-      date: '2026-11-09',
-      start: '00:00',
+      start: '2026-11-09T00:00',
     })
   })
 
@@ -99,8 +101,7 @@ describe('WeekGrid', () => {
       screen.getByRole('button', { name: 'New appointment on 2026-11-12 at 14:00' }),
     )
     expect(calendar.openCreate).toHaveBeenCalledWith({
-      date: '2026-11-12',
-      start: '14:00',
+      start: '2026-11-12T14:00',
     })
     expect(calendar.openEdit).not.toHaveBeenCalled()
   })
@@ -123,7 +124,13 @@ describe('WeekGrid', () => {
   it('shows overlapping stored appointments side by side at half width', () => {
     renderGrid([
       review,
-      { ...review, id: 'a2', title: 'Clash', start: '10:00', end: '10:30' },
+      {
+        ...review,
+        id: 'a2',
+        title: 'Clash',
+        start: '2026-11-11T10:00',
+        end: '2026-11-11T10:30',
+      },
     ])
     const first = screen.getByRole('button', { name: 'Review, 09:30 to 11:00' })
     const second = screen.getByRole('button', { name: 'Clash, 10:00 to 10:30' })
@@ -132,9 +139,76 @@ describe('WeekGrid', () => {
   })
 
   it('gives a 15 minute card a short height with a readable minimum', () => {
-    renderGrid([{ ...review, start: '09:00', end: '09:15' }])
+    renderGrid([
+      { ...review, start: '2026-11-11T09:00', end: '2026-11-11T09:15' },
+    ])
     const card = screen.getByRole('button', { name: 'Review, 09:00 to 09:15' })
     expect(card.parentElement).toHaveStyle({ height: `${HOUR_HEIGHT_PX / 4}px` })
     expect(card).toHaveClass('min-h-5')
+  })
+
+  describe('multi-day appointments', () => {
+    const night: Appointment = {
+      id: 'n1',
+      title: 'Night shift',
+      start: '2026-11-09T22:00',
+      end: '2026-11-10T02:00',
+    }
+    const label = 'Night shift, Mon, Nov 9, 22:00 to Tue, Nov 10, 02:00'
+
+    it('renders a segment in each day column with its top and height', () => {
+      renderGrid([night])
+      const monday = within(screen.getByRole('region', { name: '2026-11-09' }))
+      const tuesday = within(screen.getByRole('region', { name: '2026-11-10' }))
+
+      const first = monday.getByRole('button', { name: label })
+      const last = tuesday.getByRole('button', { name: label })
+      expect(first.parentElement).toHaveStyle({
+        top: `${22 * HOUR_HEIGHT_PX}px`,
+        height: `${2 * HOUR_HEIGHT_PX}px`,
+      })
+      expect(last.parentElement).toHaveStyle({
+        top: '0px',
+        height: `${2 * HOUR_HEIGHT_PX}px`,
+      })
+      expect(first).toHaveTextContent('Mon, Nov 9, 22:00 – Tue, Nov 10, 02:00')
+      expect(
+        within(screen.getByRole('region', { name: '2026-11-11' })).queryByText(
+          'Night shift',
+        ),
+      ).not.toBeInTheDocument()
+    })
+
+    it('offers the resize handle on the last segment only', () => {
+      renderGrid([night])
+      const monday = within(screen.getByRole('region', { name: '2026-11-09' }))
+      const tuesday = within(screen.getByRole('region', { name: '2026-11-10' }))
+
+      expect(
+        monday.queryByRole('button', { name: 'Resize Night shift' }),
+      ).not.toBeInTheDocument()
+      expect(
+        tuesday.getByRole('button', { name: 'Resize Night shift' }),
+      ).toBeInTheDocument()
+    })
+
+    it('renders only the start day when the end is the next 00:00', () => {
+      renderGrid([{ ...night, end: '2026-11-10T00:00' }])
+      const monday = within(screen.getByRole('region', { name: '2026-11-09' }))
+      const tuesday = within(screen.getByRole('region', { name: '2026-11-10' }))
+
+      expect(monday.getByText('Night shift')).toBeInTheDocument()
+      expect(tuesday.queryByText('Night shift')).not.toBeInTheDocument()
+    })
+
+    it('renders a full-height segment on every day of a long span', () => {
+      renderGrid([{ ...night, start: '2026-11-08T12:00', end: '2026-11-20T12:00' }])
+      const wednesday = within(screen.getByRole('region', { name: '2026-11-11' }))
+      const card = wednesday.getByText('Night shift').closest('[aria-label]')
+      expect(card?.parentElement).toHaveStyle({
+        top: '0px',
+        height: `${24 * HOUR_HEIGHT_PX}px`,
+      })
+    })
   })
 })

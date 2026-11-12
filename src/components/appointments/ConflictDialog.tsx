@@ -9,20 +9,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useCalendar } from '@/context/useCalendar'
-import { parseISODate } from '@/lib/dates'
+import { formatRangeFrom, formatRangeWithDates } from '@/lib/format'
+import { splitDateTime } from '@/lib/time'
 import { ConflictList } from './ConflictList'
-
-function formatLongDate(iso: string): string {
-  return parseISODate(iso).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  })
-}
 
 export function ConflictDialog() {
   const { conflict, applySuggestion, editConflict, cancelConflict } =
     useCalendar()
+  const proposedDate = conflict ? splitDateTime(conflict.proposed.start).date : ''
 
   return (
     <Dialog
@@ -39,14 +33,17 @@ export function ConflictDialog() {
               Scheduling conflict
             </DialogTitle>
             <DialogDescription>
-              {`'${conflict.proposed.title}' on ${formatLongDate(conflict.proposed.date)} at ${conflict.proposed.start}–${conflict.proposed.end} ${conflict.outOfDay ? "doesn't fit in the day." : 'overlaps with:'}`}
+              {`'${conflict.proposed.title}' on ${formatRangeWithDates(conflict.proposed.start, conflict.proposed.end)} overlaps with:`}
             </DialogDescription>
           </DialogHeader>
-          {!conflict.outOfDay && <ConflictList conflicts={conflict.conflicts} />}
+          <ConflictList
+            conflicts={conflict.conflicts}
+            referenceDate={proposedDate}
+          />
           <DialogFooter className="sm:items-center">
             {conflict.suggestion === null && (
               <p className="text-sm text-muted-foreground sm:mr-auto">
-                No free slot on this day
+                No free slot nearby
               </p>
             )}
             <Button variant="outline" onClick={cancelConflict}>
@@ -61,7 +58,7 @@ export function ConflictDialog() {
             >
               {conflict.suggestion === null
                 ? 'Move to a free slot'
-                : `Move to ${conflict.suggestion.start}–${conflict.suggestion.end}`}
+                : `Move to ${formatRangeFrom(conflict.suggestion.start, conflict.suggestion.end, proposedDate)}`}
             </Button>
           </DialogFooter>
         </DialogContent>

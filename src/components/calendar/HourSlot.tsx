@@ -1,6 +1,7 @@
 import { useDroppable } from '@dnd-kit/core'
 import { HOUR_HEIGHT_PX } from '@/config'
 import { useCalendar } from '@/context/useCalendar'
+import { toDateTime } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { hourToTime, slotId } from './dragIds'
 
@@ -20,7 +21,7 @@ export function HourSlot({ date, hour }: HourSlotProps) {
       type="button"
       tabIndex={-1}
       aria-label={`New appointment on ${date} at ${start}`}
-      onClick={() => openCreate({ date, start })}
+      onClick={() => openCreate({ start: toDateTime(date, start) })}
       className={cn(
         'block w-full cursor-pointer border-t border-border transition-colors hover:bg-accent/50',
         isOver && 'bg-accent',

@@ -7,6 +7,7 @@ describe('config', () => {
       WEEK_STARTS_ON: 1,
       STEP_MINUTES: 15,
       MIN_DURATION_MINUTES: 15,
+      SLOT_SEARCH_DAYS: 7,
       DEFAULT_DURATION_MINUTES: 60,
       HOUR_HEIGHT_PX: 48,
       DEFAULT_SCROLL_HOUR: 8,

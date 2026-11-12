@@ -6,8 +6,14 @@ const SLOT_PREFIX = 'slot:'
 
 export type DragKind = 'move' | 'resize'
 
-export function moveId(appointmentId: string): string {
-  return `${MOVE_PREFIX}${appointmentId}`
+const DAY_SUFFIX = /@\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Drag id of an appointment's card. Each day segment of a multi-day
+ * appointment passes its `date` so the draggable ids stay unique.
+ */
+export function moveId(appointmentId: string, date?: string): string {
+  return `${MOVE_PREFIX}${appointmentId}${date === undefined ? '' : `@${date}`}`
 }
 
 export function resizeId(appointmentId: string): string {
@@ -27,7 +33,10 @@ export function parseDragId(
   id: string,
 ): { kind: DragKind; appointmentId: string } | null {
   if (id.startsWith(MOVE_PREFIX)) {
-    return { kind: 'move', appointmentId: id.slice(MOVE_PREFIX.length) }
+    return {
+      kind: 'move',
+      appointmentId: id.slice(MOVE_PREFIX.length).replace(DAY_SUFFIX, ''),
+    }
   }
   if (id.startsWith(RESIZE_PREFIX)) {
     return { kind: 'resize', appointmentId: id.slice(RESIZE_PREFIX.length) }

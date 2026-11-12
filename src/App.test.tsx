@@ -18,9 +18,10 @@ async function createAppointment(
   await user.click(screen.getByRole('button', { name: 'New appointment' }))
   const dialog = await screen.findByRole('dialog')
   await user.type(screen.getByLabelText('Title'), title)
-  fireEvent.change(screen.getByLabelText('Date'), { target: { value: today } })
-  fireEvent.change(screen.getByLabelText('Start'), { target: { value: start } })
-  fireEvent.change(screen.getByLabelText('End'), { target: { value: end } })
+  fireEvent.change(screen.getByLabelText('Start date'), { target: { value: today } })
+  fireEvent.change(screen.getByLabelText('Start time'), { target: { value: start } })
+  fireEvent.change(screen.getByLabelText('End date'), { target: { value: today } })
+  fireEvent.change(screen.getByLabelText('End time'), { target: { value: end } })
   await user.click(screen.getByRole('button', { name: 'Save' }))
   return dialog
 }

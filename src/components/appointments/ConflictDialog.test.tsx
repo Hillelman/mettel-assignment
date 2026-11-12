@@ -8,17 +8,15 @@ const conflict: ConflictState = {
   proposed: {
     id: 'p1',
     title: 'Review',
-    date: '2026-11-09',
-    start: '10:00',
-    end: '11:00',
+    start: '2026-11-09T10:00',
+    end: '2026-11-09T11:00',
   },
   isNew: true,
   conflicts: [
-    { id: 'a', title: 'Standup', date: '2026-11-09', start: '09:30', end: '10:30' },
-    { id: 'b', title: 'Design sync', date: '2026-11-09', start: '10:30', end: '12:00' },
+    { id: 'a', title: 'Standup', start: '2026-11-09T09:30', end: '2026-11-09T10:30' },
+    { id: 'b', title: 'Design sync', start: '2026-11-09T10:30', end: '2026-11-09T12:00' },
   ],
-  outOfDay: false,
-  suggestion: { start: '12:00', end: '13:00' },
+  suggestion: { start: '2026-11-09T12:00', end: '2026-11-09T13:00' },
 }
 
 describe('ConflictDialog', () => {
@@ -31,7 +29,7 @@ describe('ConflictDialog', () => {
     renderWithCalendar(<ConflictDialog />, { conflict })
 
     expect(
-      screen.getByText("'Review' on Monday, Nov 9 at 10:00–11:00 overlaps with:"),
+      screen.getByText("'Review' on Mon, Nov 9, 10:00 – 11:00 overlaps with:"),
     ).toBeInTheDocument()
     expect(screen.getByText('Standup')).toBeInTheDocument()
     expect(screen.getByText('09:30–10:30')).toBeInTheDocument()
@@ -39,20 +37,53 @@ describe('ConflictDialog', () => {
     expect(screen.getByText('10:30–12:00')).toBeInTheDocument()
   })
 
-  it('explains an appointment that does not fit in the day', () => {
+  it('shows the dates of a multi-day proposal and conflicts on other days', () => {
     renderWithCalendar(<ConflictDialog />, {
       conflict: {
         ...conflict,
-        proposed: { ...conflict.proposed, start: '23:00', end: '25:00' },
-        conflicts: [],
-        outOfDay: true,
+        proposed: {
+          ...conflict.proposed,
+          start: '2026-11-09T10:00',
+          end: '2026-11-10T02:00',
+        },
+        conflicts: [
+          {
+            id: 'c',
+            title: 'Night owl',
+            start: '2026-11-10T01:00',
+            end: '2026-11-10T03:00',
+          },
+          {
+            id: 'd',
+            title: 'Retreat',
+            start: '2026-11-09T09:00',
+            end: '2026-11-11T09:00',
+          },
+        ],
       },
     })
 
     expect(
       screen.getByText(
-        "'Review' on Monday, Nov 9 at 23:00–25:00 doesn't fit in the day.",
+        "'Review' on Mon, Nov 9, 10:00 – Tue, Nov 10, 02:00 overlaps with:",
       ),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Tue, Nov 10, 01:00 – 03:00')).toBeInTheDocument()
+    expect(
+      screen.getByText('Mon, Nov 9, 09:00 – Wed, Nov 11, 09:00'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the date in the suggestion label when it is on another day', () => {
+    renderWithCalendar(<ConflictDialog />, {
+      conflict: {
+        ...conflict,
+        suggestion: { start: '2026-11-10T00:30', end: '2026-11-10T01:30' },
+      },
+    })
+
+    expect(
+      screen.getByRole('button', { name: 'Move to Tue, Nov 10, 00:30 – 01:30' }),
     ).toBeInTheDocument()
   })
 
@@ -98,6 +129,6 @@ describe('ConflictDialog', () => {
     })
 
     expect(screen.getByRole('button', { name: /move to/i })).toBeDisabled()
-    expect(screen.getByText('No free slot on this day')).toBeInTheDocument()
+    expect(screen.getByText('No free slot nearby')).toBeInTheDocument()
   })
 })

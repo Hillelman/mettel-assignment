@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { DEFAULT_DURATION_MINUTES, MIN_DURATION_MINUTES } from '@/config'
+import { DEFAULT_DURATION_MINUTES } from '@/config'
 import { addWeeks, parseISODate, startOfWeek, toISODate } from '@/lib/dates'
-import { findConflicts, findNextFreeSlot, fitsInDay } from '@/lib/conflicts'
+import { findConflicts, findNextFreeSlot } from '@/lib/conflicts'
 import { createId } from '@/lib/id'
 import { loadAppointments, saveAppointments } from '@/lib/storage'
-import { MINUTES_PER_DAY, fromMinutes, toMinutes } from '@/lib/time'
+import { addMinutes, toDateTime } from '@/lib/time'
 import type { Appointment, AppointmentInput } from '@/types/appointment'
 import {
   CalendarContext,
@@ -20,32 +20,22 @@ function currentWeekStart(): string {
 function toInput(appointment: Appointment): AppointmentInput {
   return {
     title: appointment.title,
-    date: appointment.date,
     start: appointment.start,
     end: appointment.end,
     notes: appointment.notes,
   }
 }
 
-/** Defaults: today, the next full hour, DEFAULT_DURATION; ends by 24:00. */
+/** Defaults: the next full hour today, DEFAULT_DURATION long, across midnight if needed. */
 function createDefaults(prefill: Partial<AppointmentInput> = {}): AppointmentInput {
   const now = new Date()
-  const nextHour = (now.getHours() + 1) * 60
-  const startMinutes = Math.min(
-    prefill.start !== undefined ? toMinutes(prefill.start) : nextHour,
-    MINUTES_PER_DAY - MIN_DURATION_MINUTES,
-  )
-  const endMinutes = Math.min(
-    prefill.end !== undefined
-      ? toMinutes(prefill.end)
-      : startMinutes + DEFAULT_DURATION_MINUTES,
-    MINUTES_PER_DAY,
-  )
+  const start =
+    prefill.start ??
+    addMinutes(toDateTime(toISODate(now), '00:00'), (now.getHours() + 1) * 60)
   return {
     title: prefill.title ?? '',
-    date: prefill.date ?? toISODate(now),
-    start: fromMinutes(startMinutes),
-    end: fromMinutes(endMinutes),
+    start,
+    end: prefill.end ?? addMinutes(start, DEFAULT_DURATION_MINUTES),
     notes: prefill.notes ?? '',
   }
 }
@@ -108,9 +98,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
       }
       const isNew = !appointments.some((item) => item.id === proposed.id)
       const conflicts = findConflicts(proposed, appointments, proposed.id)
-      const outOfDay = !fitsInDay(proposed)
 
-      if (!outOfDay && conflicts.length === 0) {
+      if (conflicts.length === 0) {
         commit(upsert(appointments, proposed))
         setConflict(null)
         setForm((current) => ({ ...current, open: false }))
@@ -121,7 +110,6 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
         proposed,
         isNew,
         conflicts,
-        outOfDay,
         suggestion: findNextFreeSlot(proposed, appointments, proposed.id),
       })
       setForm((current) => ({ ...current, open: false }))
