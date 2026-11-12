@@ -1,6 +1,6 @@
 # Conflict-Aware Scheduler
 
-A single-page weekly calendar for managing appointments and guarantee no overlapping. Create, edit and delete appointments, drag them to a new time in 15-minute steps, and resize them to adjust the duration. Conflicts in appointments are detected and can be resolved before they are saved. Data is kept in the browser's localStorage.
+A single-page weekly calendar for managing appointments and guarantee no overlapping. Create, edit and delete appointments, drag them to a new time and resize them to adjust their duration. Conflicts in appointments are detected and can be resolved before they are saved, proposing a new available time slot or adjusting the date/time. Data is kept in the browser's localStorage.
 
 <img width="1680" height="1002" alt="Screenshot 2026-11-12 at 15 53 22" src="https://github.com/user-attachments/assets/6f72b1a0-e66e-47ed-bc82-3deb9f2a8d5d" />
 
@@ -30,7 +30,7 @@ The app is served at http://localhost:5173 by default.
 - **Edit / delete**: click an appointment to open it. Change the fields and **Save**, or choose **Delete** and confirm.
 - **Move**: drag an appointment to another time or day. It snaps to 15-minute steps and keeps its duration. Dragging any segment of a multi-day appointment moves the whole appointment. With the keyboard, focus it, press Space, use Up and Down for 15 minutes and Left and Right for one day, then Space again to drop.
 - **Resize**: drag the top edge to change the start or the bottom edge to change the end, also into another day's column to make it span days. Edges snap to 15 minutes and keep at least 15 minutes between them.
-- **Conflicts**: when an appointment overlaps another, a dialog lists the overlaps and offers **Cancel** (discard the change), **Edit times** (back to the form) or **Move to ...** (the nearest free slot within a week).
+- **Conflicts**: when an appointment overlaps another, a dialog lists the overlaps and offers **Cancel** (discard the change), **Edit times** (back to the form) or **Move to ...** the nearest free slot within a day (configurable).
 - **Persistence**: appointments are saved to localStorage automatically and are restored when you reload the page.
 
 ## Scripts
