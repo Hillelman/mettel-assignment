@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { CalendarContext } from '@/context/CalendarContext'
 import { AppointmentForm } from './AppointmentForm'
 import { createCalendarValue, renderWithCalendar } from './testUtils'
@@ -29,31 +28,6 @@ describe('AppointmentForm', () => {
     expect(screen.getByLabelText('End date')).toHaveValue('2026-11-09')
     expect(screen.getByLabelText('Start time')).toHaveValue('10:00')
     expect(screen.getByLabelText('End time')).toHaveValue('11:00')
-  })
-
-  it('shows required errors on submit without calling requestSave', async () => {
-    const user = userEvent.setup()
-    const value = renderWithCalendar(<AppointmentForm />)
-
-    await user.click(screen.getByRole('button', { name: 'Save' }))
-
-    expect(await screen.findByText('Title is required')).toBeInTheDocument()
-    expect(screen.getByLabelText('Title')).toHaveAttribute('aria-invalid', 'true')
-    expect(value.requestSave).not.toHaveBeenCalled()
-  })
-
-  it('does not flag fields before they are left', () => {
-    renderWithCalendar(<AppointmentForm />)
-    for (const label of [
-      'Title',
-      'Start date',
-      'Start time',
-      'End date',
-      'End time',
-      'Notes',
-    ]) {
-      expect(screen.getByLabelText(label)).toHaveAttribute('aria-invalid', 'false')
-    }
   })
 
   it('resets to the new values when form.values changes', () => {

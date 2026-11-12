@@ -1,6 +1,6 @@
 import { APPOINTMENT_COLORS, type AppointmentColor } from '@/config'
 
-export type ColorClasses = {
+type ColorClasses = {
   /** Card background and text. */
   card: string
   /** Resize grip, readable on the card background. */
@@ -76,12 +76,6 @@ export function colorClasses(color: AppointmentColor): ColorClasses {
 
 export function colorLabel(color: AppointmentColor): string {
   return APPOINTMENT_COLORS.find((item) => item.id === color)?.label ?? color
-}
-
-/** A uniformly random palette color. */
-export function randomColor(): AppointmentColor {
-  const index = Math.floor(Math.random() * APPOINTMENT_COLORS.length)
-  return APPOINTMENT_COLORS[Math.min(index, APPOINTMENT_COLORS.length - 1)].id
 }
 
 /** A palette color derived from a simple hash of `id`: the same id always gives the same color. */

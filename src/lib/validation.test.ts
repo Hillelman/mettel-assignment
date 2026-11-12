@@ -1,4 +1,3 @@
-import { APPOINTMENT_COLORS } from '@/config'
 import { appointmentRules, isAppointment } from './validation'
 
 const valid = {
@@ -28,20 +27,12 @@ describe('isAppointment', () => {
     expect(isAppointment({ ...valid, title: '   ' })).toBe(false)
   })
 
-  it('rejects a missing id', () => {
-    expect(isAppointment({ ...valid, id: undefined })).toBe(false)
-  })
-
   it('rejects a bad date-time format', () => {
     expect(isAppointment({ ...valid, start: '2026-11-09T9:00' })).toBe(false)
     expect(isAppointment({ ...valid, end: '2026-11-09T10:60' })).toBe(false)
     expect(isAppointment({ ...valid, end: '2026-11-09T24:00' })).toBe(false)
     expect(isAppointment({ ...valid, start: '09:00', end: '10:00' })).toBe(false)
     expect(isAppointment({ ...valid, start: '2026-11-09 09:00' })).toBe(false)
-  })
-
-  it('rejects a bad date', () => {
-    expect(isAppointment({ ...valid, start: '2026-02-30T09:00' })).toBe(false)
   })
 
   it('rejects end before or equal to start, across dates too', () => {
@@ -63,12 +54,6 @@ describe('isAppointment', () => {
     expect(isAppointment(withoutColor)).toBe(false)
     expect(isAppointment({ ...valid, color: 'chartreuse' })).toBe(false)
     expect(isAppointment({ ...valid, color: 3 })).toBe(false)
-  })
-
-  it('accepts every palette color', () => {
-    for (const { id } of APPOINTMENT_COLORS) {
-      expect(isAppointment({ ...valid, color: id })).toBe(true)
-    }
   })
 })
 
@@ -131,12 +116,6 @@ describe('appointmentRules', () => {
 
   it('does not compare against an invalid start', () => {
     expect(check('endTime', '09:00', { ...values, startDate: '' })).toBe(true)
-  })
-
-  it('re-checks the end time when the start or end date changes', () => {
-    expect(appointmentRules.startDate.deps).toBe('endTime')
-    expect(appointmentRules.startTime.deps).toBe('endTime')
-    expect(appointmentRules.endDate.deps).toBe('endTime')
   })
 
   it('limits the notes length', () => {

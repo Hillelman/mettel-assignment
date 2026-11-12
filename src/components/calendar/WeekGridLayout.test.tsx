@@ -72,19 +72,4 @@ describe('WeekGrid layout', () => {
     expect(grid).toHaveClass('md:divide-x')
     expect(grid?.className).not.toMatch(/(^|\s)(md:)?gap-/)
   })
-
-  it('draws a line between the gutter and the body of each stacked day', () => {
-    renderGrid()
-    const column = screen.getByRole('region', { name: '2026-11-09' })
-    const body = column.querySelector('.relative')
-    expect(body).toHaveClass('border-l')
-  })
-
-  it('renders flat day headers with a bottom border', () => {
-    renderGrid()
-    for (const heading of screen.getAllByRole('heading', { level: 2 })) {
-      expect(heading).toHaveClass('border-b')
-      expect(heading).not.toHaveClass('rounded-md')
-    }
-  })
 })

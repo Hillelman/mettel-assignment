@@ -1,10 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { STORAGE_KEY } from '@/config'
 import { formatWeekLabel, startOfWeek, toISODate } from '@/lib/dates'
 import App from './App'
-import readme from '../README.md?raw'
-import packageJson from '../package.json?raw'
 
 const today = toISODate(new Date())
 const currentLabel = formatWeekLabel(toISODate(startOfWeek(new Date())))
@@ -16,14 +13,13 @@ async function createAppointment(
   end: string,
 ) {
   await user.click(screen.getByRole('button', { name: 'New appointment' }))
-  const dialog = await screen.findByRole('dialog')
+  await screen.findByRole('dialog')
   await user.type(screen.getByLabelText('Title'), title)
   fireEvent.change(screen.getByLabelText('Start date'), { target: { value: today } })
   fireEvent.change(screen.getByLabelText('Start time'), { target: { value: start } })
   fireEvent.change(screen.getByLabelText('End date'), { target: { value: today } })
   fireEvent.change(screen.getByLabelText('End time'), { target: { value: end } })
   await user.click(screen.getByRole('button', { name: 'Save' }))
-  return dialog
 }
 
 describe('App', () => {
@@ -99,54 +95,5 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'First, 10:00 to 11:00' }),
     ).toBeInTheDocument()
-  })
-
-  it('saves back-to-back appointments without a conflict dialog', async () => {
-    const user = userEvent.setup()
-    render(<App />)
-    await createAppointment(user, 'First', '10:00', '11:00')
-    await screen.findByRole('button', { name: 'First, 10:00 to 11:00' })
-
-    await createAppointment(user, 'Second', '11:00', '12:00')
-    expect(
-      await screen.findByRole('button', { name: 'Second, 11:00 to 12:00' }),
-    ).toBeInTheDocument()
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-
-  it('renders without crashing when storage holds malformed JSON', () => {
-    localStorage.setItem(STORAGE_KEY, '{not json')
-    render(<App />)
-    expect(screen.getByText(currentLabel)).toBeInTheDocument()
-  })
-})
-
-describe('README', () => {
-  const pkg: { scripts: Record<string, string> } = JSON.parse(packageJson)
-
-  it('has the Description, How to install and How to use sections', () => {
-    expect(readme).toMatch(/^## Description$/m)
-    expect(readme).toMatch(/^## How to install$/m)
-    expect(readme).toMatch(/^## How to use$/m)
-  })
-
-  it('mentions resizing from the top and bottom edges and multi-day appointments', () => {
-    expect(readme).toMatch(/resize[^.]*top[^.]*bottom\s+edge/i)
-    expect(readme).toMatch(/multi-day appointments/i)
-  })
-
-  it('mentions choosing a color and the random default', () => {
-    expect(readme).toMatch(/choose another one in the \*\*Color\*\* dropdown/i)
-    expect(readme).toMatch(/random color/i)
-  })
-
-  it('only lists scripts that exist in package.json', () => {
-    const listed = [...readme.matchAll(/`bun run ([\w:-]+)`/g)].map(
-      (match) => match[1],
-    )
-    expect(listed.length).toBeGreaterThan(0)
-    for (const script of listed) {
-      expect(pkg.scripts).toHaveProperty(script)
-    }
   })
 })

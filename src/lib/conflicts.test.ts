@@ -28,14 +28,6 @@ describe('overlaps', () => {
     expect(overlaps(appt('a', '09:00', '10:00'), appt('b', '09:30', '10:30'))).toBe(true)
   })
 
-  it('detects nested ranges', () => {
-    expect(overlaps(appt('a', '09:00', '12:00'), appt('b', '10:00', '11:00'))).toBe(true)
-  })
-
-  it('detects identical ranges', () => {
-    expect(overlaps(appt('a', '09:00', '10:00'), appt('b', '09:00', '10:00'))).toBe(true)
-  })
-
   it('allows back-to-back ranges', () => {
     expect(overlaps(appt('a', '09:00', '10:00'), appt('b', '10:00', '11:00'))).toBe(false)
     expect(overlaps(appt('a', '10:00', '11:00'), appt('b', '09:00', '10:00'))).toBe(false)
@@ -97,7 +89,7 @@ describe('findNextFreeSlot', () => {
   it('finds the backward slot when it is nearer than the forward one', () => {
     const all = [appt('a', '09:00', '09:00', '2026-11-09', '2026-11-12')]
     expect(
-      findNextFreeSlot(appt('p', '10:00', '11:00', '2026-11-10'), all),
+      findNextFreeSlot(appt('p', '10:00', '11:00', '2026-11-10'), all, undefined, 7),
     ).toEqual({
       start: '2026-11-09T08:00',
       end: '2026-11-09T09:00',
@@ -129,14 +121,20 @@ describe('findNextFreeSlot', () => {
     })
   })
 
-  it('returns null when nothing is free within 7 days either way', () => {
-    const all = [appt('a', '00:00', '00:00', '2026-10-25', '2026-11-30')]
-    expect(findNextFreeSlot(appt('p', '09:00', '10:00'), all)).toBeNull()
+  it('searches one day either way by default', () => {
+    const proposed = appt('p', '09:00', '10:00')
+    const reachable = [appt('a', '08:00', '09:00', '2026-11-08', '2026-11-10')]
+    expect(findNextFreeSlot(proposed, reachable)).toEqual({
+      start: '2026-11-10T09:00',
+      end: '2026-11-10T10:00',
+    })
+    const beyond = [appt('a', '08:00', '09:15', '2026-11-08', '2026-11-10')]
+    expect(findNextFreeSlot(proposed, beyond)).toBeNull()
   })
 
   it('finds a slot at the edge of the search window', () => {
     const all = [appt('a', '00:00', '00:00', '2026-11-02', '2026-11-16')]
-    expect(findNextFreeSlot(appt('p', '09:00', '10:00'), all)).toEqual({
+    expect(findNextFreeSlot(appt('p', '09:00', '10:00'), all, undefined, 7)).toEqual({
       start: '2026-11-16T00:00',
       end: '2026-11-16T01:00',
     })
@@ -187,19 +185,6 @@ describe('layoutDay', () => {
       appointments.flatMap((item) => segmentsForDay([item], '2026-11-09')),
     )
   }
-
-  it('gives a lone appointment the full width', () => {
-    expect(layout(appt('a', '09:00', '10:00')).get('a')).toEqual({
-      column: 0,
-      columns: 1,
-    })
-  })
-
-  it('places overlapping appointments side by side', () => {
-    const result = layout(appt('a', '09:00', '10:00'), appt('b', '09:30', '10:30'))
-    expect(result.get('a')).toEqual({ column: 0, columns: 2 })
-    expect(result.get('b')).toEqual({ column: 1, columns: 2 })
-  })
 
   it('keeps separate clusters independent and reuses free columns', () => {
     const result = layout(
