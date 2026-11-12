@@ -1,3 +1,5 @@
+import type { AppointmentColor } from '@/config'
+
 export type Appointment = {
   id: string
   title: string
@@ -6,6 +8,7 @@ export type Appointment = {
   /** Local wall-clock date-time, YYYY-MM-DDTHH:mm. Always after `start`. */
   end: string
   notes?: string
+  color: AppointmentColor
 }
 
 export type AppointmentInput = Omit<Appointment, 'id'>
@@ -22,4 +25,5 @@ export type AppointmentFormValues = {
   /** HH:mm */
   endTime: string
   notes?: string
+  color: AppointmentColor
 }

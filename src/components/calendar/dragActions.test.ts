@@ -13,6 +13,7 @@ const meeting: Appointment = {
   title: 'Meeting',
   start: '2026-11-09T09:30',
   end: '2026-11-09T11:00',
+  color: 'blue',
 }
 
 const night: Appointment = {
@@ -20,6 +21,7 @@ const night: Appointment = {
   title: 'Night',
   start: '2026-11-09T22:00',
   end: '2026-11-10T02:00',
+  color: 'blue',
 }
 
 describe('moveTarget', () => {

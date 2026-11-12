@@ -13,6 +13,7 @@ const lunch: AppointmentInput = {
   title: 'Lunch',
   start: '2026-11-09T12:00',
   end: '2026-11-09T13:00',
+  color: 'blue',
 }
 
 function stored() {
@@ -27,6 +28,7 @@ describe('CalendarProvider', () => {
   })
 
   afterEach(() => {
+    vi.restoreAllMocks()
     vi.useRealTimers()
   })
 
@@ -122,10 +124,11 @@ describe('CalendarProvider', () => {
 
   it('persists a multi-day appointment', () => {
     const { result } = renderHook(() => useCalendar(), { wrapper })
-    const night = {
+    const night: AppointmentInput = {
       title: 'Night shift',
       start: '2026-11-09T22:00',
       end: '2026-11-10T02:00',
+      color: 'blue',
     }
     let saved = false
     act(() => {
@@ -144,6 +147,7 @@ describe('CalendarProvider', () => {
         title: 'Night shift',
         start: '2026-11-09T22:00',
         end: '2026-11-10T02:00',
+        color: 'blue',
       })
     })
     const before = result.current.appointments
@@ -154,6 +158,7 @@ describe('CalendarProvider', () => {
         title: 'Early call',
         start: '2026-11-10T01:00',
         end: '2026-11-10T03:00',
+        color: 'blue',
       })
     })
 
@@ -174,6 +179,7 @@ describe('CalendarProvider', () => {
         title: 'Night shift',
         start: '2026-11-09T22:00',
         end: '2026-11-10T00:00',
+        color: 'blue',
       })
     })
     let saved = false
@@ -182,6 +188,7 @@ describe('CalendarProvider', () => {
         title: 'Early call',
         start: '2026-11-10T00:00',
         end: '2026-11-10T01:00',
+        color: 'blue',
       })
     })
     expect(saved).toBe(true)
@@ -260,6 +267,23 @@ describe('CalendarProvider', () => {
     })
   })
 
+  it('editConflict keeps the proposed color', () => {
+    const { result } = renderHook(() => useCalendar(), { wrapper })
+    act(() => {
+      result.current.requestSave(lunch)
+    })
+    act(() => {
+      result.current.requestSave({
+        ...lunch,
+        start: '2026-11-09T12:30',
+        end: '2026-11-09T13:30',
+        color: 'pink',
+      })
+    })
+    act(() => result.current.editConflict())
+    expect(result.current.form.values.color).toBe('pink')
+  })
+
   it('deletes an appointment and persists', () => {
     const { result } = renderHook(() => useCalendar(), { wrapper })
     act(() => {
@@ -290,6 +314,35 @@ describe('CalendarProvider', () => {
       editingId: existing.id,
       values: lunch,
     })
+  })
+
+  it('prefills a random palette color when creating', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    const { result } = renderHook(() => useCalendar(), { wrapper })
+    act(() => result.current.openCreate())
+    expect(result.current.form.values.color).toBe('amber')
+
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    act(() => result.current.openCreate())
+    expect(result.current.form.values.color).toBe('blue')
+  })
+
+  it('keeps a color given in the prefill', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    const { result } = renderHook(() => useCalendar(), { wrapper })
+    act(() => result.current.openCreate({ color: 'red' }))
+    expect(result.current.form.values.color).toBe('red')
+  })
+
+  it('keeps the stored color when editing', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    const { result } = renderHook(() => useCalendar(), { wrapper })
+    act(() => {
+      result.current.requestSave({ ...lunch, color: 'teal' })
+    })
+    const [existing] = result.current.appointments
+    act(() => result.current.openEdit(existing.id))
+    expect(result.current.form.values.color).toBe('teal')
   })
 
   it('lets the create defaults cross midnight', () => {

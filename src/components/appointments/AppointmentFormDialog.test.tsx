@@ -1,9 +1,10 @@
 import { fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { FormState } from '@/context/CalendarContext'
 import { AppointmentFormDialog } from './AppointmentFormDialog'
 import { renderWithCalendar } from './testUtils'
 
-const editing = {
+const editing: FormState = {
   open: true,
   editingId: 'a1',
   values: {
@@ -11,6 +12,7 @@ const editing = {
     start: '2026-11-09T09:00',
     end: '2026-11-09T09:30',
     notes: '',
+    color: 'teal',
   },
 }
 
@@ -174,9 +176,56 @@ describe('AppointmentFormDialog', () => {
         start: '2026-11-09T22:00',
         end: '2026-11-10T02:00',
         notes: '',
+        color: 'blue',
       },
       undefined,
     )
+  })
+
+  it('shows the Color field right below Title with the prefilled color', () => {
+    renderWithCalendar(<AppointmentFormDialog />)
+    const title = screen.getByLabelText('Title')
+    const color = screen.getByLabelText('Color')
+    const startDate = screen.getByLabelText('Start date')
+
+    expect(color).toHaveTextContent('Blue')
+    expect(
+      title.compareDocumentPosition(color) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      color.compareDocumentPosition(startDate) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('saves the chosen color', async () => {
+    const user = userEvent.setup()
+    const value = renderWithCalendar(<AppointmentFormDialog />)
+
+    await user.type(screen.getByLabelText('Title'), 'Lunch')
+    await user.click(screen.getByLabelText('Color'))
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(10)
+    await user.click(screen.getByRole('option', { name: 'Violet' }))
+    expect(screen.getByLabelText('Color')).toHaveTextContent('Violet')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(value.requestSave).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Lunch', color: 'violet' }),
+      undefined,
+    )
+  })
+
+  it('closes the open color list on Escape before the dialog', async () => {
+    const user = userEvent.setup()
+    const value = renderWithCalendar(<AppointmentFormDialog />)
+
+    await user.click(screen.getByLabelText('Color'))
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(value.closeForm).not.toHaveBeenCalled()
   })
 
   it('accepts empty notes', async () => {
@@ -207,6 +256,7 @@ describe('AppointmentFormDialog', () => {
         start: '2026-11-09T09:00',
         end: '2026-11-09T09:30',
         notes: 'agenda',
+        color: 'teal',
       },
       'a1',
     )

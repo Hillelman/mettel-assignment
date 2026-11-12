@@ -14,6 +14,29 @@ describe('config', () => {
       TOUCH_DRAG_DELAY_MS: 250,
       TITLE_MAX_LENGTH: 80,
       NOTES_MAX_LENGTH: 500,
+      COMPACT_CARD_MAX_MINUTES: 15,
+      APPOINTMENT_COLORS: config.APPOINTMENT_COLORS,
     })
+  })
+
+  it('has exactly 10 unique colors, each with a label', () => {
+    const { APPOINTMENT_COLORS } = config
+    expect(APPOINTMENT_COLORS).toHaveLength(10)
+    expect(new Set(APPOINTMENT_COLORS.map((color) => color.id)).size).toBe(10)
+    expect(APPOINTMENT_COLORS.map((color) => color.id)).toEqual([
+      'blue',
+      'sky',
+      'teal',
+      'green',
+      'lime',
+      'amber',
+      'orange',
+      'red',
+      'pink',
+      'violet',
+    ])
+    for (const color of APPOINTMENT_COLORS) {
+      expect(color.label.length).toBeGreaterThan(0)
+    }
   })
 })

@@ -135,6 +135,11 @@ describe('README', () => {
     expect(readme).toMatch(/multi-day appointments/i)
   })
 
+  it('mentions choosing a color and the random default', () => {
+    expect(readme).toMatch(/choose another one in the \*\*Color\*\* dropdown/i)
+    expect(readme).toMatch(/random color/i)
+  })
+
   it('only lists scripts that exist in package.json', () => {
     const listed = [...readme.matchAll(/`bun run ([\w:-]+)`/g)].map(
       (match) => match[1],

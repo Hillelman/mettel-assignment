@@ -23,6 +23,7 @@ function renderGrid() {
         title: '',
         start: `${WEEK_START}T09:00`,
         end: `${WEEK_START}T10:00`,
+        color: 'blue',
       },
     },
     openCreate: vi.fn(),

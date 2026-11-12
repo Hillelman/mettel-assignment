@@ -23,6 +23,26 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  --appointment-blue: oklch(0.5 0.19 260);
+  --appointment-blue-foreground: oklch(0.985 0 0);
+  --appointment-sky: oklch(0.8 0.12 225);
+  --appointment-sky-foreground: oklch(0.2 0.02 260);
+  --appointment-teal: oklch(0.52 0.085 195);
+  --appointment-teal-foreground: oklch(0.985 0 0);
+  --appointment-green: oklch(0.5 0.13 150);
+  --appointment-green-foreground: oklch(0.985 0 0);
+  --appointment-lime: oklch(0.84 0.17 125);
+  --appointment-lime-foreground: oklch(0.2 0.02 260);
+  --appointment-amber: oklch(0.85 0.16 85);
+  --appointment-amber-foreground: oklch(0.2 0.02 260);
+  --appointment-orange: oklch(0.72 0.17 55);
+  --appointment-orange-foreground: oklch(0.2 0.02 260);
+  --appointment-red: oklch(0.52 0.2 27);
+  --appointment-red-foreground: oklch(0.985 0 0);
+  --appointment-pink: oklch(0.55 0.2 355);
+  --appointment-pink-foreground: oklch(0.985 0 0);
+  --appointment-violet: oklch(0.5 0.2 295);
+  --appointment-violet-foreground: oklch(0.985 0 0);
 }
 
 @theme inline {
@@ -48,6 +68,26 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-appointment-blue: var(--appointment-blue);
+  --color-appointment-blue-foreground: var(--appointment-blue-foreground);
+  --color-appointment-sky: var(--appointment-sky);
+  --color-appointment-sky-foreground: var(--appointment-sky-foreground);
+  --color-appointment-teal: var(--appointment-teal);
+  --color-appointment-teal-foreground: var(--appointment-teal-foreground);
+  --color-appointment-green: var(--appointment-green);
+  --color-appointment-green-foreground: var(--appointment-green-foreground);
+  --color-appointment-lime: var(--appointment-lime);
+  --color-appointment-lime-foreground: var(--appointment-lime-foreground);
+  --color-appointment-amber: var(--appointment-amber);
+  --color-appointment-amber-foreground: var(--appointment-amber-foreground);
+  --color-appointment-orange: var(--appointment-orange);
+  --color-appointment-orange-foreground: var(--appointment-orange-foreground);
+  --color-appointment-red: var(--appointment-red);
+  --color-appointment-red-foreground: var(--appointment-red-foreground);
+  --color-appointment-pink: var(--appointment-pink);
+  --color-appointment-pink-foreground: var(--appointment-pink-foreground);
+  --color-appointment-violet: var(--appointment-violet);
+  --color-appointment-violet-foreground: var(--appointment-violet-foreground);
 }
 
 @layer base {

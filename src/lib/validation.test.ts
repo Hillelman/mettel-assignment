@@ -1,3 +1,4 @@
+import { APPOINTMENT_COLORS } from '@/config'
 import { appointmentRules, isAppointment } from './validation'
 
 const valid = {
@@ -5,6 +6,7 @@ const valid = {
   title: 'Dentist',
   start: '2026-11-09T09:00',
   end: '2026-11-09T10:00',
+  color: 'blue',
 }
 
 describe('isAppointment', () => {
@@ -53,6 +55,20 @@ describe('isAppointment', () => {
 
   it('rejects non-string notes', () => {
     expect(isAppointment({ ...valid, notes: 5 })).toBe(false)
+  })
+
+  it('rejects a missing or unknown color', () => {
+    const { color, ...withoutColor } = valid
+    expect(color).toBe('blue')
+    expect(isAppointment(withoutColor)).toBe(false)
+    expect(isAppointment({ ...valid, color: 'chartreuse' })).toBe(false)
+    expect(isAppointment({ ...valid, color: 3 })).toBe(false)
+  })
+
+  it('accepts every palette color', () => {
+    for (const { id } of APPOINTMENT_COLORS) {
+      expect(isAppointment({ ...valid, color: id })).toBe(true)
+    }
   })
 })
 
@@ -126,5 +142,11 @@ describe('appointmentRules', () => {
   it('limits the notes length', () => {
     expect(check('notes', undefined)).toBe(true)
     expect(check('notes', 'a'.repeat(501))).toBe('Notes must be 500 characters or fewer')
+  })
+
+  it('requires a color from the palette', () => {
+    expect(appointmentRules.color.required).toBe('Color is required')
+    expect(check('color', 'blue')).toBe(true)
+    expect(check('color', 'chartreuse')).toBe('Choose a color from the list')
   })
 })

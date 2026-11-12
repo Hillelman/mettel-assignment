@@ -14,7 +14,13 @@ function appt(
   date = '2026-11-09',
   endDate = date,
 ): Appointment {
-  return { id, title: id, start: `${date}T${start}`, end: `${endDate}T${end}` }
+  return {
+    id,
+    title: id,
+    start: `${date}T${start}`,
+    end: `${endDate}T${end}`,
+    color: 'blue',
+  }
 }
 
 describe('overlaps', () => {

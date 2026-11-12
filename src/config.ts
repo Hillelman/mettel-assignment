@@ -11,3 +11,19 @@ export const DEFAULT_SCROLL_HOUR = 8
 export const TOUCH_DRAG_DELAY_MS = 250
 export const TITLE_MAX_LENGTH = 80
 export const NOTES_MAX_LENGTH = 500
+/** A segment drawn this many minutes or shorter shows only its title. */
+export const COMPACT_CARD_MAX_MINUTES = 15
+export const APPOINTMENT_COLORS = [
+  { id: 'blue', label: 'Blue' },
+  { id: 'sky', label: 'Sky' },
+  { id: 'teal', label: 'Teal' },
+  { id: 'green', label: 'Green' },
+  { id: 'lime', label: 'Lime' },
+  { id: 'amber', label: 'Amber' },
+  { id: 'orange', label: 'Orange' },
+  { id: 'red', label: 'Red' },
+  { id: 'pink', label: 'Pink' },
+  { id: 'violet', label: 'Violet' },
+] as const
+
+export type AppointmentColor = (typeof APPOINTMENT_COLORS)[number]['id']

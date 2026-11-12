@@ -74,6 +74,7 @@ describe('AppointmentForm', () => {
           start: '2026-11-10T14:00',
           end: '2026-11-11T15:00',
           notes: 'bring notes',
+          color: 'teal',
         },
       },
     })

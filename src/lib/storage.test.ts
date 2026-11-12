@@ -1,5 +1,6 @@
-import { STORAGE_KEY } from '@/config'
+import { APPOINTMENT_COLORS, STORAGE_KEY } from '@/config'
 import type { Appointment } from '@/types/appointment'
+import { colorForId } from './colors'
 import { loadAppointments, saveAppointments } from './storage'
 
 const valid: Appointment = {
@@ -8,6 +9,7 @@ const valid: Appointment = {
   start: '2026-11-09T09:00',
   end: '2026-11-09T10:00',
   notes: 'Bring forms',
+  color: 'teal',
 }
 
 describe('storage', () => {
@@ -56,10 +58,55 @@ describe('storage', () => {
       ]),
     )
     expect(loadAppointments()).toEqual([
-      valid,
-      { id: 'b', title: 'Late', start: '2026-11-09T22:00', end: '2026-11-10T00:00' },
-      { id: 'c', title: 'New year', start: '2026-12-31T23:00', end: '2027-01-01T00:00' },
+      { ...valid, color: colorForId('a') },
+      {
+        id: 'b',
+        title: 'Late',
+        start: '2026-11-09T22:00',
+        end: '2026-11-10T00:00',
+        color: colorForId('b'),
+      },
+      {
+        id: 'c',
+        title: 'New year',
+        start: '2026-12-31T23:00',
+        end: '2027-01-01T00:00',
+        color: colorForId('c'),
+      },
     ])
+  })
+
+  it('gives an entry without a color the same deterministic color on every load', () => {
+    const { color, ...withoutColor } = valid
+    expect(color).toBe('teal')
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([withoutColor]))
+    const first = loadAppointments()
+    const second = loadAppointments()
+    expect(first).toEqual([{ ...withoutColor, color: colorForId('a') }])
+    expect(second).toEqual(first)
+  })
+
+  it('treats an unknown color as missing instead of dropping the entry', () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([
+        { ...valid, color: 'chartreuse' },
+        { ...valid, id: 'b', color: 7 },
+      ]),
+    )
+    const colors = loadAppointments().map((item) => item.color)
+    expect(colors).toEqual([colorForId('a'), colorForId('b')])
+    expect(loadAppointments().map((item) => item.color)).toEqual(colors)
+  })
+
+  it('keeps every valid palette color as stored', () => {
+    const list = APPOINTMENT_COLORS.map(({ id }, index) => ({
+      ...valid,
+      id: `id-${index}`,
+      color: id,
+    }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+    expect(loadAppointments()).toEqual(list)
   })
 
   it('drops malformed v1 entries', () => {

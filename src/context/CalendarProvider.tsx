@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { DEFAULT_DURATION_MINUTES } from '@/config'
 import { addWeeks, parseISODate, startOfWeek, toISODate } from '@/lib/dates'
+import { randomColor } from '@/lib/colors'
 import { findConflicts, findNextFreeSlot } from '@/lib/conflicts'
 import { createId } from '@/lib/id'
 import { loadAppointments, saveAppointments } from '@/lib/storage'
@@ -23,6 +24,7 @@ function toInput(appointment: Appointment): AppointmentInput {
     start: appointment.start,
     end: appointment.end,
     notes: appointment.notes,
+    color: appointment.color,
   }
 }
 
@@ -37,6 +39,7 @@ function createDefaults(prefill: Partial<AppointmentInput> = {}): AppointmentInp
     start,
     end: prefill.end ?? addMinutes(start, DEFAULT_DURATION_MINUTES),
     notes: prefill.notes ?? '',
+    color: prefill.color ?? randomColor(),
   }
 }
 
