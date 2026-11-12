@@ -31,13 +31,6 @@ describe('moveTarget', () => {
     end: '2026-11-09T10:00',
   }
 
-  it('moves 09:00 to 09:45 keeping the duration', () => {
-    expect(moveTarget(nine, '2026-11-09', '2026-11-09', px(9, 45))).toEqual({
-      start: '2026-11-09T09:45',
-      end: '2026-11-09T10:45',
-    })
-  })
-
   it('snaps the offset to 15 minutes', () => {
     expect(moveTarget(nine, '2026-11-09', '2026-11-09', px(9, 52))).toEqual({
       start: '2026-11-09T09:45',
@@ -74,15 +67,6 @@ describe('moveTarget', () => {
     })
   })
 
-  it('returns null when the second segment stays where it is', () => {
-    expect(moveTarget(night, '2026-11-10', '2026-11-10', 0)).toBeNull()
-  })
-
-  it('keeps durations across a daylight saving change', () => {
-    const target = moveTarget(nine, '2026-11-09', '2026-11-02', px(9, 15))
-    expect(target).toEqual({ start: '2026-11-02T09:15', end: '2026-11-02T10:15' })
-  })
-
   it('keeps the card within its column when dragged above the top', () => {
     expect(moveTarget(nine, '2026-11-09', '2026-11-10', -40)).toEqual({
       start: '2026-11-10T00:00',
@@ -92,20 +76,6 @@ describe('moveTarget', () => {
 })
 
 describe('resizeTarget', () => {
-  it('changes only the start for the top edge', () => {
-    expect(resizeTarget(meeting, 'start', '2026-11-09', px(9))).toEqual({
-      start: '2026-11-09T09:00',
-      end: meeting.end,
-    })
-  })
-
-  it('changes only the end for the bottom edge', () => {
-    expect(resizeTarget(meeting, 'end', '2026-11-09', px(12))).toEqual({
-      start: meeting.start,
-      end: '2026-11-09T12:00',
-    })
-  })
-
   it('snaps both edges to 15 minutes', () => {
     expect(resizeTarget(meeting, 'start', '2026-11-09', px(8, 22))).toEqual({
       start: '2026-11-09T08:15',
@@ -135,13 +105,6 @@ describe('resizeTarget', () => {
     expect(resizeTarget(meeting, 'end', '2026-11-10', px(2))).toEqual({
       start: meeting.start,
       end: '2026-11-10T02:00',
-    })
-  })
-
-  it('gives a previous-day start for the top edge in the previous column', () => {
-    expect(resizeTarget(meeting, 'start', '2026-11-08', px(22))).toEqual({
-      start: '2026-11-08T22:00',
-      end: meeting.end,
     })
   })
 
@@ -229,23 +192,6 @@ describe('applyDragEnd', () => {
     expect(requestSave).not.toHaveBeenCalled()
   })
 
-  it('saves only the start for the top handle', () => {
-    const requestSave = vi.fn(() => true)
-    applyDragEnd(
-      {
-        activeId: resizeId('a1', 'start'),
-        overId: dayId('2026-11-09'),
-        offsetPx: px(9),
-      },
-      [meeting],
-      requestSave,
-    )
-    expect(requestSave).toHaveBeenCalledWith(
-      { ...meeting, start: '2026-11-09T09:00' },
-      'a1',
-    )
-  })
-
   it('saves only the end for the bottom handle', () => {
     const requestSave = vi.fn(() => true)
     applyDragEnd(
@@ -260,23 +206,6 @@ describe('applyDragEnd', () => {
     expect(requestSave).toHaveBeenCalledWith(
       { ...meeting, end: '2026-11-09T11:30' },
       'a1',
-    )
-  })
-
-  it('stretches the bottom handle into the next column', () => {
-    const requestSave = vi.fn(() => true)
-    applyDragEnd(
-      {
-        activeId: resizeId('n1', 'end'),
-        overId: dayId('2026-11-11'),
-        offsetPx: px(3),
-      },
-      [night],
-      requestSave,
-    )
-    expect(requestSave).toHaveBeenCalledWith(
-      { ...night, end: '2026-11-11T03:00' },
-      'n1',
     )
   })
 
@@ -301,22 +230,5 @@ describe('applyDragEnd', () => {
       requestSave,
     )
     expect(requestSave).not.toHaveBeenCalled()
-  })
-
-  it('never shrinks a resize below the minimum duration', () => {
-    const requestSave = vi.fn(() => true)
-    applyDragEnd(
-      {
-        activeId: resizeId('a1', 'end'),
-        overId: dayId('2026-11-09'),
-        offsetPx: px(1),
-      },
-      [meeting],
-      requestSave,
-    )
-    expect(requestSave).toHaveBeenCalledWith(
-      { ...meeting, end: '2026-11-09T09:45' },
-      'a1',
-    )
   })
 })

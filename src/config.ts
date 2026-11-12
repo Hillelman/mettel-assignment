@@ -25,3 +25,5 @@ export const APPOINTMENT_COLORS = [
 ] as const;
 
 export type AppointmentColor = (typeof APPOINTMENT_COLORS)[number]["id"];
+
+export const DEFAULT_APPOINTMENT_COLOR: AppointmentColor = "blue";

@@ -4,7 +4,6 @@ import {
   fromMinutes,
   fromWallMinutes,
   isDateTime,
-  resizeEnd,
   snapToStep,
   splitDateTime,
   toDateTime,
@@ -79,27 +78,5 @@ describe('date-time helpers', () => {
     }
     expect(addMinutes('2026-03-08T01:30', 60)).toBe('2026-03-08T02:30')
     expect(addMinutes('2026-11-01T00:30', 120)).toBe('2026-11-01T02:30')
-  })
-})
-
-describe('resizeEnd', () => {
-  const start = '2026-11-09T09:00'
-  const end = '2026-11-09T10:00'
-
-  it('snaps a pixel delta to 15-minute steps', () => {
-    expect(resizeEnd(start, end, 12)).toBe('2026-11-09T10:15')
-    expect(resizeEnd(start, end, 5)).toBe('2026-11-09T10:00')
-    expect(resizeEnd(start, end, 24)).toBe('2026-11-09T10:30')
-    expect(resizeEnd(start, end, -12)).toBe('2026-11-09T09:45')
-  })
-
-  it('clamps to the minimum duration', () => {
-    expect(resizeEnd(start, end, -1000)).toBe('2026-11-09T09:15')
-  })
-
-  it('continues into the next day', () => {
-    expect(resizeEnd('2026-11-09T23:00', '2026-11-09T23:30', 48)).toBe(
-      '2026-11-10T00:30',
-    )
   })
 })

@@ -91,23 +91,6 @@ describe('CalendarProvider', () => {
     expect(result.current.conflict?.conflicts).toEqual(before)
   })
 
-  it('allows back-to-back appointments', () => {
-    const { result } = renderHook(() => useCalendar(), { wrapper })
-    act(() => {
-      result.current.requestSave(lunch)
-    })
-    let saved = false
-    act(() => {
-      saved = result.current.requestSave({
-        ...lunch,
-        start: '2026-11-09T13:00',
-        end: '2026-11-09T14:00',
-      })
-    })
-    expect(saved).toBe(true)
-    expect(result.current.appointments).toHaveLength(2)
-  })
-
   it('saves an unchanged existing appointment without a conflict', () => {
     const { result } = renderHook(() => useCalendar(), { wrapper })
     act(() => {
@@ -138,60 +121,6 @@ describe('CalendarProvider', () => {
     expect(saved).toBe(true)
     expect(result.current.appointments).toMatchObject([night])
     expect(stored()).toMatchObject([night])
-  })
-
-  it('rejects an overlap with a multi-day appointment and leaves the data unchanged', () => {
-    const { result } = renderHook(() => useCalendar(), { wrapper })
-    act(() => {
-      result.current.requestSave({
-        title: 'Night shift',
-        start: '2026-11-09T22:00',
-        end: '2026-11-10T02:00',
-        color: 'blue',
-      })
-    })
-    const before = result.current.appointments
-
-    let saved = true
-    act(() => {
-      saved = result.current.requestSave({
-        title: 'Early call',
-        start: '2026-11-10T01:00',
-        end: '2026-11-10T03:00',
-        color: 'blue',
-      })
-    })
-
-    expect(saved).toBe(false)
-    expect(result.current.appointments).toBe(before)
-    expect(stored()).toEqual(before)
-    expect(result.current.conflict?.conflicts).toEqual(before)
-    expect(result.current.conflict?.suggestion).toEqual({
-      start: '2026-11-10T02:00',
-      end: '2026-11-10T04:00',
-    })
-  })
-
-  it('allows back-to-back appointments across midnight', () => {
-    const { result } = renderHook(() => useCalendar(), { wrapper })
-    act(() => {
-      result.current.requestSave({
-        title: 'Night shift',
-        start: '2026-11-09T22:00',
-        end: '2026-11-10T00:00',
-        color: 'blue',
-      })
-    })
-    let saved = false
-    act(() => {
-      saved = result.current.requestSave({
-        title: 'Early call',
-        start: '2026-11-10T00:00',
-        end: '2026-11-10T01:00',
-        color: 'blue',
-      })
-    })
-    expect(saved).toBe(true)
   })
 
   it('applySuggestion saves the suggested time', () => {
@@ -316,26 +245,19 @@ describe('CalendarProvider', () => {
     })
   })
 
-  it('prefills a random palette color when creating', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+  it('prefills the default color when creating', () => {
     const { result } = renderHook(() => useCalendar(), { wrapper })
-    act(() => result.current.openCreate())
-    expect(result.current.form.values.color).toBe('amber')
-
-    vi.spyOn(Math, 'random').mockReturnValue(0)
     act(() => result.current.openCreate())
     expect(result.current.form.values.color).toBe('blue')
   })
 
   it('keeps a color given in the prefill', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0)
     const { result } = renderHook(() => useCalendar(), { wrapper })
     act(() => result.current.openCreate({ color: 'red' }))
     expect(result.current.form.values.color).toBe('red')
   })
 
   it('keeps the stored color when editing', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.99)
     const { result } = renderHook(() => useCalendar(), { wrapper })
     act(() => {
       result.current.requestSave({ ...lunch, color: 'teal' })

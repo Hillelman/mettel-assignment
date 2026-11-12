@@ -44,13 +44,14 @@ export function findConflicts(
 
 /**
  * Nearest free slot with the same duration, in STEP_MINUTES steps, searching
- * forward from the proposed start and then backward, up to SLOT_SEARCH_DAYS
+ * forward from the proposed start and then backward, up to `searchDays`
  * each way. Ties go to the forward slot. Null when nothing nearby is free.
  */
 export function findNextFreeSlot(
   proposed: TimeRange,
   all: Appointment[],
   ignoreId?: string,
+  searchDays = SLOT_SEARCH_DAYS,
 ): Slot | null {
   const duration = durationMinutes(proposed)
   if (duration <= 0) return null
@@ -66,7 +67,7 @@ export function findNextFreeSlot(
   const isFree = (start: number): boolean =>
     !others.some((other) => start < other.end && other.start < start + duration)
 
-  const maxOffset = SLOT_SEARCH_DAYS * MINUTES_PER_DAY
+  const maxOffset = searchDays * MINUTES_PER_DAY
   for (let offset = 0; offset <= maxOffset; offset += STEP_MINUTES) {
     for (const start of [origin + offset, origin - offset]) {
       if (isFree(start)) {

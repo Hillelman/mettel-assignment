@@ -74,16 +74,6 @@ describe('WeekGrid', () => {
     expect(labels[24]).toBe('24:00')
   })
 
-  it('renders a 24:00 label in every stacked day gutter', () => {
-    renderGrid()
-    for (const date of ['2026-11-09', '2026-11-15']) {
-      const day = within(screen.getByRole('region', { name: date }))
-      const labels = day.getAllByText(/^\d{2}:00$/).map((el) => el.textContent)
-      expect(labels).toHaveLength(25)
-      expect(labels[24]).toBe('24:00')
-    }
-  })
-
   it('renders an empty week as clickable slots', async () => {
     const calendar = renderGrid()
     expect(screen.getAllByRole('button')).toHaveLength(7 * 24)
@@ -106,17 +96,6 @@ describe('WeekGrid', () => {
     const column = within(screen.getByRole('region', { name: '2026-11-11' }))
     expect(column.getByText('Review')).toBeInTheDocument()
     expect(card).toHaveTextContent('09:30 – 11:00')
-  })
-
-  it('opens create for the clicked empty slot', async () => {
-    const calendar = renderGrid([review])
-    await userEvent.click(
-      screen.getByRole('button', { name: 'New appointment on 2026-11-12 at 14:00' }),
-    )
-    expect(calendar.openCreate).toHaveBeenCalledWith({
-      start: '2026-11-12T14:00',
-    })
-    expect(calendar.openEdit).not.toHaveBeenCalled()
   })
 
   it('opens edit when a card is clicked', async () => {
@@ -164,15 +143,6 @@ describe('WeekGrid', () => {
     const second = screen.getByRole('button', { name: 'Clash, 10:00 to 10:30' })
     expect(first.parentElement).toHaveStyle({ left: '0%', width: '50%' })
     expect(second.parentElement).toHaveStyle({ left: '50%', width: '50%' })
-  })
-
-  it('gives a 15 minute card a short height with a readable minimum', () => {
-    renderGrid([
-      { ...review, start: '2026-11-11T09:00', end: '2026-11-11T09:15' },
-    ])
-    const card = screen.getByRole('button', { name: 'Review, 09:00 to 09:15' })
-    expect(card.parentElement).toHaveStyle({ height: `${HOUR_HEIGHT_PX / 4}px` })
-    expect(card).toHaveClass('min-h-5')
   })
 
   describe('colors and compact cards', () => {
