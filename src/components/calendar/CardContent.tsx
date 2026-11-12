@@ -6,9 +6,18 @@ type CardContentProps = {
   start: string
   /** YYYY-MM-DDTHH:mm */
   end: string
+  /** Show only the title, on one line. */
+  compact: boolean
 }
 
-export function CardContent({ title, start, end }: CardContentProps) {
+export function CardContent({ title, start, end, compact }: CardContentProps) {
+  if (compact) {
+    return (
+      <div className="flex h-full min-w-0 items-center overflow-hidden text-xs leading-tight">
+        <span className="truncate font-medium">{title}</span>
+      </div>
+    )
+  }
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden text-xs leading-tight">
       <span className="truncate font-medium">{title}</span>

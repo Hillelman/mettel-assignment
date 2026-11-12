@@ -5,6 +5,7 @@ import {
   TITLE_MAX_LENGTH,
 } from '@/config'
 import type { Appointment, AppointmentFormValues } from '@/types/appointment'
+import { isAppointmentColor } from './colors'
 import { isValidISODate } from './dates'
 import { isDateTime, isTime, toDateTime, toMinutes } from './time'
 
@@ -17,6 +18,8 @@ const DATE_INVALID = 'Enter a valid date'
 const TIME_INVALID = 'Enter a time as HH:mm'
 const STEP_INVALID = `Use ${STEP_MINUTES}-minute steps`
 const END_BEFORE_START = 'End must be after the start'
+const COLOR_REQUIRED = 'Color is required'
+const COLOR_INVALID = 'Choose a color from the list'
 const TITLE_TOO_LONG = `Title must be ${TITLE_MAX_LENGTH} characters or fewer`
 const NOTES_TOO_LONG = `Notes must be ${NOTES_MAX_LENGTH} characters or fewer`
 
@@ -77,6 +80,11 @@ const notesRules: Rules<'notes'> = {
   validate: (value) => (value ?? '').length <= NOTES_MAX_LENGTH || NOTES_TOO_LONG,
 }
 
+const colorRules: Rules<'color'> = {
+  required: COLOR_REQUIRED,
+  validate: (value) => isAppointmentColor(value) || COLOR_INVALID,
+}
+
 /**
  * react-hook-form rules for each form field, for use with `register`. The
  * start and end date and the start time re-check the end time, whose rule
@@ -89,6 +97,7 @@ export const appointmentRules = {
   endDate: dateRules(END_DATE_REQUIRED),
   endTime: endTimeRules,
   notes: notesRules,
+  color: colorRules,
 }
 
 /** Strict shape and format check for data read from storage. */
@@ -96,7 +105,7 @@ export function isAppointment(value: unknown): value is Appointment {
   if (typeof value !== 'object' || value === null) return false
   const candidate = value as Record<string, unknown>
 
-  const { id, title, start, end, notes } = candidate
+  const { id, title, start, end, notes, color } = candidate
   if (typeof id !== 'string' || id.length === 0) return false
   if (typeof title !== 'string') return false
   const trimmedLength = title.trim().length
@@ -104,6 +113,7 @@ export function isAppointment(value: unknown): value is Appointment {
   if (typeof start !== 'string' || !isDateTime(start)) return false
   if (typeof end !== 'string' || !isDateTime(end)) return false
   if (end <= start) return false
+  if (!isAppointmentColor(color)) return false
   if (notes !== undefined) {
     if (typeof notes !== 'string' || notes.length > NOTES_MAX_LENGTH) return false
   }

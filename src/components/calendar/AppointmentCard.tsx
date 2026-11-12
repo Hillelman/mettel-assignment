@@ -3,10 +3,12 @@ import type { KeyboardEvent } from 'react'
 import { HOUR_HEIGHT_PX } from '@/config'
 import { useCalendar } from '@/context/useCalendar'
 import type { DayLayout, DaySegment } from '@/lib/conflicts'
+import { colorClasses } from '@/lib/colors'
 import { formatCardRange } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { CardContent } from './CardContent'
 import { moveId } from './dragIds'
+import { isCompactCard } from './grid'
 import { ResizeHandle } from './ResizeHandle'
 
 type AppointmentCardProps = {
@@ -26,7 +28,7 @@ export function AppointmentCard({
 }: AppointmentCardProps) {
   const { openEdit } = useCalendar()
   const { appointment, startMinutes, endMinutes, isFirst, isLast } = segment
-  const { id, title, start, end } = appointment
+  const { id, title, start, end, color } = appointment
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } =
     useDraggable({ id: moveId(id, date) })
 
@@ -61,14 +63,34 @@ export function AppointmentCard({
         onClick={() => openEdit(id)}
         aria-label={`${title}, ${formatCardRange(start, end, ' to ')}`}
         className={cn(
-          'absolute inset-x-0.5 inset-y-px min-h-5 cursor-grab overflow-hidden rounded-md bg-primary px-1.5 py-0.5 text-primary-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'absolute inset-x-0.5 inset-y-px min-h-5 cursor-grab overflow-hidden rounded-md px-1.5 py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          colorClasses(color).card,
           (isDragging || isResizing) && 'opacity-40',
         )}
       >
-        <CardContent title={title} start={start} end={end} />
+        <CardContent
+          title={title}
+          start={start}
+          end={end}
+          compact={isCompactCard(endMinutes - startMinutes)}
+        />
       </div>
-      {isFirst && <ResizeHandle appointmentId={id} title={title} edge="start" />}
-      {isLast && <ResizeHandle appointmentId={id} title={title} edge="end" />}
+      {isFirst && (
+        <ResizeHandle
+          appointmentId={id}
+          title={title}
+          color={color}
+          edge="start"
+        />
+      )}
+      {isLast && (
+        <ResizeHandle
+          appointmentId={id}
+          title={title}
+          color={color}
+          edge="end"
+        />
+      )}
     </div>
   )
 }

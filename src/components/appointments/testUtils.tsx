@@ -22,6 +22,7 @@ export function createCalendarValue(
         start: '2026-11-09T10:00',
         end: '2026-11-09T11:00',
         notes: '',
+        color: 'blue',
       },
     },
     openCreate: vi.fn(),

@@ -25,6 +25,7 @@ function renderGrid(appointments: Appointment[] = []) {
         title: '',
         start: `${WEEK_START}T09:00`,
         end: `${WEEK_START}T10:00`,
+        color: 'blue',
       },
     },
     openCreate: vi.fn(),
@@ -49,6 +50,7 @@ const review: Appointment = {
   title: 'Review',
   start: '2026-11-11T09:30',
   end: '2026-11-11T11:00',
+  color: 'blue',
 }
 
 describe('WeekGrid', () => {
@@ -173,12 +175,63 @@ describe('WeekGrid', () => {
     expect(card).toHaveClass('min-h-5')
   })
 
+  describe('colors and compact cards', () => {
+    it('colors a card by its appointment color, never with bg-primary', () => {
+      renderGrid([{ ...review, color: 'orange' }])
+      const card = screen.getByRole('button', { name: 'Review, 09:30 to 11:00' })
+      expect(card).toHaveClass(
+        'bg-appointment-orange',
+        'text-appointment-orange-foreground',
+      )
+      expect(card).not.toHaveClass('bg-primary')
+      expect(
+        screen.getByRole('button', { name: 'Resize start of Review' }).firstElementChild,
+      ).toHaveClass('bg-appointment-orange-foreground/60')
+    })
+
+    it('shows only the title on a 15 minute card, keeping the range in its label', () => {
+      renderGrid([
+        { ...review, start: '2026-11-11T09:00', end: '2026-11-11T09:15' },
+      ])
+      const card = screen.getByRole('button', { name: 'Review, 09:00 to 09:15' })
+      expect(card).toHaveTextContent('Review')
+      expect(card).not.toHaveTextContent('09:00')
+      expect(card).not.toHaveTextContent('09:15')
+    })
+
+    it('shows the title and range on a 30 minute card', () => {
+      renderGrid([
+        { ...review, start: '2026-11-11T09:00', end: '2026-11-11T09:30' },
+      ])
+      const card = screen.getByRole('button', { name: 'Review, 09:00 to 09:30' })
+      expect(card).toHaveTextContent('Review')
+      expect(card).toHaveTextContent('09:00 – 09:30')
+    })
+
+    it('makes only the 15 minute tail segment of a multi-day appointment compact', () => {
+      renderGrid([
+        { ...review, start: '2026-11-11T22:00', end: '2026-11-12T00:15' },
+      ])
+      const label = 'Review, Wed, Nov 11, 22:00 to Thu, Nov 12, 00:15'
+      const wednesday = within(screen.getByRole('region', { name: '2026-11-11' }))
+      const thursday = within(screen.getByRole('region', { name: '2026-11-12' }))
+
+      expect(wednesday.getByRole('button', { name: label })).toHaveTextContent(
+        'Wed, Nov 11, 22:00 – Thu, Nov 12, 00:15',
+      )
+      const tail = thursday.getByRole('button', { name: label })
+      expect(tail).toHaveTextContent('Review')
+      expect(tail).not.toHaveTextContent('00:15')
+    })
+  })
+
   describe('multi-day appointments', () => {
     const night: Appointment = {
       id: 'n1',
       title: 'Night shift',
       start: '2026-11-09T22:00',
       end: '2026-11-10T02:00',
+      color: 'blue',
     }
     const label = 'Night shift, Mon, Nov 9, 22:00 to Tue, Nov 10, 02:00'
 

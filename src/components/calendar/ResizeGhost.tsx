@@ -1,6 +1,9 @@
 import { HOUR_HEIGHT_PX } from '@/config'
+import { colorClasses } from '@/lib/colors'
 import type { DaySegment } from '@/lib/conflicts'
+import { cn } from '@/lib/utils'
 import { CardContent } from './CardContent'
+import { isCompactCard } from './grid'
 
 type ResizeGhostProps = {
   segment: DaySegment
@@ -19,11 +22,17 @@ export function ResizeGhost({ segment }: ResizeGhostProps) {
         height: ((endMinutes - startMinutes) / 60) * HOUR_HEIGHT_PX,
       }}
     >
-      <div className="absolute inset-x-0.5 inset-y-px min-h-5 overflow-hidden rounded-md bg-primary px-1.5 py-0.5 text-primary-foreground shadow-lg ring-2 ring-ring/40">
+      <div
+        className={cn(
+          'absolute inset-x-0.5 inset-y-px min-h-5 overflow-hidden rounded-md px-1.5 py-0.5 shadow-lg ring-2 ring-ring/40',
+          colorClasses(appointment.color).card,
+        )}
+      >
         <CardContent
           title={appointment.title}
           start={appointment.start}
           end={appointment.end}
+          compact={isCompactCard(endMinutes - startMinutes)}
         />
       </div>
     </div>

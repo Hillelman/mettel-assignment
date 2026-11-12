@@ -19,6 +19,8 @@ import {
 import { useCalendar } from '@/context/useCalendar'
 import { segmentsForDay, type DaySegment } from '@/lib/conflicts'
 import { weekDays } from '@/lib/dates'
+import { splitDateTime } from '@/lib/time'
+import type { Appointment } from '@/types/appointment'
 import { DayColumn, type ResizeState } from './DayColumn'
 import { DAY_HEADER_HEIGHT_CLASS } from './grid'
 import { DragPreview } from './DragPreview'
@@ -37,11 +39,24 @@ const KEYBOARD_CODES = {
   end: ['Space', 'Enter'],
 }
 
+type MovingDrag = {
+  id: string
+  /** ISO date of the grabbed segment, when the card passed it. */
+  day: string | null
+}
+
+/** Minutes the grabbed day of the appointment is drawn for. */
+function movingDuration(appointment: Appointment, day: string | null): number {
+  const date = day ?? splitDateTime(appointment.start).date
+  const [segment] = segmentsForDay([appointment], date)
+  return segment ? segment.endMinutes - segment.startMinutes : Infinity
+}
+
 export function WeekGrid() {
   const { appointments, weekStart, requestSave } = useCalendar()
   const days = useMemo(() => weekDays(weekStart), [weekStart])
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [movingId, setMovingId] = useState<string | null>(null)
+  const [movingDrag, setMovingDrag] = useState<MovingDrag | null>(null)
   const [resizing, setResizing] = useState<ResizeState | null>(null)
 
   useEffect(() => {
@@ -67,11 +82,11 @@ export function WeekGrid() {
     )
   }, [appointments, days])
 
-  const moving = appointments.find((item) => item.id === movingId) ?? null
+  const moving = appointments.find((item) => item.id === movingDrag?.id) ?? null
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     const drag = parseDragId(String(active.id))
-    if (drag?.kind === 'move') setMovingId(drag.appointmentId)
+    if (drag?.kind === 'move') setMovingDrag({ id: drag.appointmentId, day: drag.day })
     if (drag?.kind === 'resize') {
       setResizing({ id: drag.appointmentId, preview: null })
     }
@@ -93,7 +108,7 @@ export function WeekGrid() {
   }
 
   const clearDrag = () => {
-    setMovingId(null)
+    setMovingDrag(null)
     setResizing(null)
   }
 
@@ -130,7 +145,12 @@ export function WeekGrid() {
         </div>
       </div>
       <DragOverlay>
-        {moving ? <DragPreview appointment={moving} /> : null}
+        {moving ? (
+          <DragPreview
+            appointment={moving}
+            durationMinutes={movingDuration(moving, movingDrag?.day ?? null)}
+          />
+        ) : null}
       </DragOverlay>
     </DndContext>
   )

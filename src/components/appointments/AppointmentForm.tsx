@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,7 @@ import { useCalendar } from '@/context/useCalendar'
 import { splitDateTime, toDateTime } from '@/lib/time'
 import { appointmentRules } from '@/lib/validation'
 import type { AppointmentFormValues, AppointmentInput } from '@/types/appointment'
+import { ColorSelect } from './ColorSelect'
 import { DeleteConfirm } from './DeleteConfirm'
 import { FormField } from './FormField'
 
@@ -24,6 +25,7 @@ function toFormValues(values: AppointmentInput): AppointmentFormValues {
     endDate: end.date,
     endTime: end.time,
     notes: values.notes ?? '',
+    color: values.color,
   }
 }
 
@@ -32,6 +34,7 @@ export function AppointmentForm() {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -54,6 +57,7 @@ export function AppointmentForm() {
         start: toDateTime(values.startDate, values.startTime),
         end: toDateTime(values.endDate, values.endTime),
         notes: (values.notes ?? '').trim(),
+        color: values.color,
       },
       editingId ?? undefined,
     )
@@ -68,6 +72,23 @@ export function AppointmentForm() {
             autoComplete="off"
             {...control}
             {...register('title', appointmentRules.title)}
+          />
+        )}
+      </FormField>
+      <FormField label="Color" error={errors.color?.message}>
+        {(fieldControl) => (
+          <Controller
+            name="color"
+            control={control}
+            rules={appointmentRules.color}
+            render={({ field }) => (
+              <ColorSelect
+                {...fieldControl}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
           />
         )}
       </FormField>

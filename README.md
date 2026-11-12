@@ -35,6 +35,10 @@ The app is served at http://localhost:5173 by default.
   start and end date and time (and optional notes), then **Save**. The form
   checks the values only when you press **Save**, and clears each error as soon
   as you fix that field.
+- **Color**: every new appointment gets a random color from a palette of ten.
+  Choose another one in the **Color** dropdown of the form. The card uses it
+  for its background, and appointments of 15 minutes or less show only the
+  title.
 - **Multi-day appointments**: set the end date after the start date. The
   appointment shows a segment in every day it touches.
 - **Edit / delete**: click an appointment to open it. Change the fields and
