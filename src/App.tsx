@@ -1,8 +1,18 @@
+import { AppointmentFormDialog } from '@/components/appointments/AppointmentFormDialog'
+import { ConflictDialog } from '@/components/appointments/ConflictDialog'
+import { WeekGrid } from '@/components/calendar/WeekGrid'
+import { AppShell } from '@/components/layout/AppShell'
+import { CalendarProvider } from '@/context/CalendarProvider'
+
 function App() {
   return (
-    <main className="p-4">
-      <h1 className="text-xl font-semibold">Weekly Calendar</h1>
-    </main>
+    <CalendarProvider>
+      <AppShell>
+        <WeekGrid />
+      </AppShell>
+      <AppointmentFormDialog />
+      <ConflictDialog />
+    </CalendarProvider>
   )
 }
 
