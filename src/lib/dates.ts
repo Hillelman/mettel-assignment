@@ -87,3 +87,9 @@ export function formatDayHeader(iso: string): { weekday: string; day: string } {
 export function isToday(iso: string): boolean {
   return iso === toISODate(new Date())
 }
+
+/** "Mon, Nov 9" */
+export function formatDateLabel(iso: string): string {
+  const date = parseISODate(iso)
+  return `${WEEKDAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}`
+}

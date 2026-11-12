@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import { layoutDay } from '@/lib/conflicts'
-import type { Appointment } from '@/types/appointment'
+import { layoutDay, type DaySegment } from '@/lib/conflicts'
 import { AppointmentCard } from './AppointmentCard'
 import { DayHeader } from './DayHeader'
 import { HourGutter } from './HourGutter'
@@ -9,13 +8,13 @@ import { HOURS } from './grid'
 
 type DayColumnProps = {
   date: string
-  appointments: Appointment[]
+  segments: DaySegment[]
   /** The appointment whose resize handle is being dragged, if it is on this day. */
   resizing: { id: string; deltaY: number } | null
 }
 
-export function DayColumn({ date, appointments, resizing }: DayColumnProps) {
-  const layouts = useMemo(() => layoutDay(appointments), [appointments])
+export function DayColumn({ date, segments, resizing }: DayColumnProps) {
+  const layouts = useMemo(() => layoutDay(segments), [segments])
 
   return (
     <section aria-label={date} className="min-w-0">
@@ -26,16 +25,20 @@ export function DayColumn({ date, appointments, resizing }: DayColumnProps) {
           {HOURS.map((hour) => (
             <HourSlot key={hour} date={date} hour={hour} />
           ))}
-          {appointments.map((appointment) => {
+          {segments.map((segment) => {
+            const { appointment, isLast } = segment
             const layout = layouts.get(appointment.id)
             if (!layout) return null
             return (
               <AppointmentCard
                 key={appointment.id}
-                appointment={appointment}
+                segment={segment}
+                date={date}
                 layout={layout}
                 resizeDeltaY={
-                  resizing?.id === appointment.id ? resizing.deltaY : undefined
+                  isLast && resizing?.id === appointment.id
+                    ? resizing.deltaY
+                    : undefined
                 }
               />
             )

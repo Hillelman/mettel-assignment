@@ -1,4 +1,11 @@
-import { durationMinutes, fromMinutes, resizeEnd, toMinutes } from '@/lib/time'
+import {
+  addMinutes,
+  durationMinutes,
+  resizeEnd,
+  splitDateTime,
+  toDateTime,
+  toMinutes,
+} from '@/lib/time'
 import type { Appointment, AppointmentInput } from '@/types/appointment'
 import { hourToTime, parseDragId, parseSlotId } from './dragIds'
 
@@ -36,12 +43,12 @@ export function applyDragEnd(
 
   const slot = overId === null ? null : parseSlotId(overId)
   if (!slot) return
+  const from = splitDateTime(appointment.start)
   const sameHour =
-    slot.date === appointment.date &&
-    slot.hour === Math.floor(toMinutes(appointment.start) / 60)
+    slot.date === from.date && slot.hour === Math.floor(toMinutes(from.time) / 60)
   if (sameHour) return
 
-  const start = hourToTime(slot.hour)
-  const end = fromMinutes(toMinutes(start) + durationMinutes(appointment))
-  requestSave({ ...appointment, date: slot.date, start, end }, appointment.id)
+  const start = toDateTime(slot.date, hourToTime(slot.hour))
+  const end = addMinutes(start, durationMinutes(appointment))
+  requestSave({ ...appointment, start, end }, appointment.id)
 }

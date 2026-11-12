@@ -12,7 +12,6 @@ export type ConflictState = {
   proposed: Appointment
   isNew: boolean
   conflicts: Appointment[]
-  outOfDay: boolean
   suggestion: Slot | null
 }
 
@@ -24,12 +23,13 @@ export type CalendarContextValue = {
   goToNextWeek: () => void
   goToToday: () => void
   form: FormState
+  /** Opens the create form. `start` and `end` prefill are date-times. */
   openCreate: (prefill?: Partial<AppointmentInput>) => void
   openEdit: (id: string) => void
   closeForm: () => void
   /**
-   * Upserts when the input fits in the day and has no conflicts, then returns
-   * true. Otherwise sets `conflict`, saves nothing and returns false.
+   * Upserts when the input has no conflicts, then returns true. Otherwise
+   * sets `conflict`, saves nothing and returns false.
    */
   requestSave: (input: AppointmentInput, id?: string) => boolean
   deleteAppointment: (id: string) => void

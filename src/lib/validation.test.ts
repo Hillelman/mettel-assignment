@@ -3,15 +3,15 @@ import { appointmentRules, isAppointment } from './validation'
 const valid = {
   id: 'a',
   title: 'Dentist',
-  date: '2026-11-09',
-  start: '09:00',
-  end: '10:00',
+  start: '2026-11-09T09:00',
+  end: '2026-11-09T10:00',
 }
 
 describe('isAppointment', () => {
   it('accepts a valid appointment, with or without notes', () => {
     expect(isAppointment(valid)).toBe(true)
-    expect(isAppointment({ ...valid, notes: 'Bring forms', end: '24:00' })).toBe(true)
+    expect(isAppointment({ ...valid, notes: 'Bring forms' })).toBe(true)
+    expect(isAppointment({ ...valid, end: '2026-11-10T02:00' })).toBe(true)
   })
 
   it('rejects non-objects', () => {
@@ -30,19 +30,25 @@ describe('isAppointment', () => {
     expect(isAppointment({ ...valid, id: undefined })).toBe(false)
   })
 
-  it('rejects a bad time format', () => {
-    expect(isAppointment({ ...valid, start: '9:00' })).toBe(false)
-    expect(isAppointment({ ...valid, end: '10:60' })).toBe(false)
-    expect(isAppointment({ ...valid, start: '24:00', end: '24:00' })).toBe(false)
+  it('rejects a bad date-time format', () => {
+    expect(isAppointment({ ...valid, start: '2026-11-09T9:00' })).toBe(false)
+    expect(isAppointment({ ...valid, end: '2026-11-09T10:60' })).toBe(false)
+    expect(isAppointment({ ...valid, end: '2026-11-09T24:00' })).toBe(false)
+    expect(isAppointment({ ...valid, start: '09:00', end: '10:00' })).toBe(false)
+    expect(isAppointment({ ...valid, start: '2026-11-09 09:00' })).toBe(false)
   })
 
   it('rejects a bad date', () => {
-    expect(isAppointment({ ...valid, date: '2026-02-30' })).toBe(false)
+    expect(isAppointment({ ...valid, start: '2026-02-30T09:00' })).toBe(false)
   })
 
-  it('rejects end before or equal to start', () => {
-    expect(isAppointment({ ...valid, end: '09:00' })).toBe(false)
-    expect(isAppointment({ ...valid, end: '08:00' })).toBe(false)
+  it('rejects end before or equal to start, across dates too', () => {
+    expect(isAppointment({ ...valid, end: '2026-11-09T09:00' })).toBe(false)
+    expect(isAppointment({ ...valid, end: '2026-11-09T08:00' })).toBe(false)
+    expect(isAppointment({ ...valid, end: '2026-11-08T23:00' })).toBe(false)
+    expect(
+      isAppointment({ ...valid, start: '2026-11-10T09:00', end: '2026-11-09T10:00' }),
+    ).toBe(false)
   })
 
   it('rejects non-string notes', () => {
@@ -51,7 +57,13 @@ describe('isAppointment', () => {
 })
 
 describe('appointmentRules', () => {
-  const values = { title: '', date: '', start: '09:00', end: '10:00' }
+  const values = {
+    title: '',
+    startDate: '2026-11-09',
+    startTime: '09:00',
+    endDate: '2026-11-09',
+    endTime: '10:00',
+  }
 
   function check<K extends keyof typeof appointmentRules>(
     field: K,
@@ -70,22 +82,45 @@ describe('appointmentRules', () => {
     expect(check('title', ` ${'a'.repeat(80)} `)).toBe(true)
   })
 
-  it('validates the date', () => {
-    expect(check('date', '2026-13-01')).toBe('Enter a valid date')
-    expect(check('date', '2026-11-09')).toBe(true)
+  it('validates the dates', () => {
+    expect(appointmentRules.startDate.required).toBe('Start date is required')
+    expect(appointmentRules.endDate.required).toBe('End date is required')
+    expect(check('startDate', '2026-13-01')).toBe('Enter a valid date')
+    expect(check('endDate', '2026-02-30')).toBe('Enter a valid date')
+    expect(check('startDate', '2026-11-09')).toBe(true)
   })
 
-  it('validates start format and step', () => {
-    expect(check('start', 'abc')).toBe('Enter a time as HH:mm')
-    expect(check('start', '09:10')).toBe('Use 15-minute steps')
-    expect(check('start', '09:15')).toBe(true)
+  it('validates start time format and step', () => {
+    expect(appointmentRules.startTime.required).toBe('Start time is required')
+    expect(check('startTime', 'abc')).toBe('Enter a time as HH:mm')
+    expect(check('startTime', '09:10')).toBe('Use 15-minute steps')
+    expect(check('startTime', '09:15')).toBe(true)
   })
 
-  it('requires end after start', () => {
-    expect(check('end', '09:00')).toBe('End time must be after the start time')
-    expect(check('end', '08:00')).toBe('End time must be after the start time')
-    expect(check('end', '09:15')).toBe(true)
-    expect(check('end', '24:00')).toBe(true)
+  it('validates end time format and step', () => {
+    expect(appointmentRules.endTime.required).toBe('End time is required')
+    expect(check('endTime', '24:00')).toBe('Enter a time as HH:mm')
+    expect(check('endTime', '10:10')).toBe('Use 15-minute steps')
+  })
+
+  it('requires the end date-time after the start date-time', () => {
+    const message = 'End must be after the start'
+    expect(check('endTime', '09:00')).toBe(message)
+    expect(check('endTime', '08:00')).toBe(message)
+    expect(check('endTime', '09:15')).toBe(true)
+    expect(check('endTime', '08:00', { ...values, endDate: '2026-11-10' })).toBe(true)
+    expect(check('endTime', '12:00', { ...values, endDate: '2026-11-08' })).toBe(message)
+    expect(check('endTime', '09:00', { ...values, endDate: '2026-11-10' })).toBe(true)
+  })
+
+  it('does not compare against an invalid start', () => {
+    expect(check('endTime', '09:00', { ...values, startDate: '' })).toBe(true)
+  })
+
+  it('re-checks the end time when the start or end date changes', () => {
+    expect(appointmentRules.startDate.deps).toBe('endTime')
+    expect(appointmentRules.startTime.deps).toBe('endTime')
+    expect(appointmentRules.endDate.deps).toBe('endTime')
   })
 
   it('limits the notes length', () => {

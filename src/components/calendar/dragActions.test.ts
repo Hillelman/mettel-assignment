@@ -5,9 +5,8 @@ import { moveId, resizeId, slotId } from './dragIds'
 const meeting: Appointment = {
   id: 'a1',
   title: 'Meeting',
-  date: '2026-11-09',
-  start: '09:30',
-  end: '11:00',
+  start: '2026-11-09T09:30',
+  end: '2026-11-09T11:00',
 }
 
 describe('applyDragEnd', () => {
@@ -19,7 +18,7 @@ describe('applyDragEnd', () => {
       requestSave,
     )
     expect(requestSave).toHaveBeenCalledWith(
-      { ...meeting, date: '2026-11-11', start: '14:00', end: '15:30' },
+      { ...meeting, start: '2026-11-11T14:00', end: '2026-11-11T15:30' },
       'a1',
     )
   })
@@ -42,9 +41,44 @@ describe('applyDragEnd', () => {
       requestSave,
     )
     expect(requestSave).toHaveBeenCalledWith(
-      { ...meeting, date: '2026-11-10', start: '09:00', end: '10:30' },
+      { ...meeting, start: '2026-11-10T09:00', end: '2026-11-10T10:30' },
       'a1',
     )
+  })
+
+  it('keeps a multi-day duration when moving', () => {
+    const requestSave = vi.fn(() => true)
+    const night: Appointment = {
+      id: 'n1',
+      title: 'Night',
+      start: '2026-11-09T22:00',
+      end: '2026-11-10T02:00',
+    }
+    applyDragEnd(
+      { activeId: moveId('n1', '2026-11-10'), overId: slotId('2026-11-11', 23), deltaY: 0 },
+      [night],
+      requestSave,
+    )
+    expect(requestSave).toHaveBeenCalledWith(
+      { ...night, start: '2026-11-11T23:00', end: '2026-11-12T03:00' },
+      'n1',
+    )
+  })
+
+  it('resizes the end of a multi-day appointment on its last day', () => {
+    const requestSave = vi.fn(() => true)
+    const night: Appointment = {
+      id: 'n1',
+      title: 'Night',
+      start: '2026-11-09T22:00',
+      end: '2026-11-10T02:00',
+    }
+    applyDragEnd(
+      { activeId: resizeId('n1'), overId: null, deltaY: 48 },
+      [night],
+      requestSave,
+    )
+    expect(requestSave).toHaveBeenCalledWith({ ...night, end: '2026-11-10T03:00' }, 'n1')
   })
 
   it('does nothing when dropped outside any slot', () => {
@@ -74,7 +108,7 @@ describe('applyDragEnd', () => {
       [meeting],
       requestSave,
     )
-    expect(requestSave).toHaveBeenCalledWith({ ...meeting, end: '11:30' }, 'a1')
+    expect(requestSave).toHaveBeenCalledWith({ ...meeting, end: '2026-11-09T11:30' }, 'a1')
   })
 
   it('does not save a resize that snaps back to the same end', () => {
@@ -94,6 +128,6 @@ describe('applyDragEnd', () => {
       [meeting],
       requestSave,
     )
-    expect(requestSave).toHaveBeenCalledWith({ ...meeting, end: '09:45' }, 'a1')
+    expect(requestSave).toHaveBeenCalledWith({ ...meeting, end: '2026-11-09T09:45' }, 'a1')
   })
 })

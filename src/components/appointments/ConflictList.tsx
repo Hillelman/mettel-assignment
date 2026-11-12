@@ -1,10 +1,13 @@
+import { formatRangeFrom } from '@/lib/format'
 import type { Appointment } from '@/types/appointment'
 
 type ConflictListProps = {
   conflicts: Appointment[]
+  /** ISO date; ranges inside it are shown as times only. */
+  referenceDate: string
 }
 
-export function ConflictList({ conflicts }: ConflictListProps) {
+export function ConflictList({ conflicts, referenceDate }: ConflictListProps) {
   return (
     <ul className="grid gap-2">
       {conflicts.map((appointment) => (
@@ -14,7 +17,7 @@ export function ConflictList({ conflicts }: ConflictListProps) {
         >
           <span className="font-medium">{appointment.title}</span>
           <span className="text-muted-foreground">
-            {appointment.start}–{appointment.end}
+            {formatRangeFrom(appointment.start, appointment.end, referenceDate)}
           </span>
         </li>
       ))}

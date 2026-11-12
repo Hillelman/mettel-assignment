@@ -19,7 +19,11 @@ function renderGrid() {
     form: {
       open: false,
       editingId: null,
-      values: { title: '', date: WEEK_START, start: '09:00', end: '10:00' },
+      values: {
+        title: '',
+        start: `${WEEK_START}T09:00`,
+        end: `${WEEK_START}T10:00`,
+      },
     },
     openCreate: vi.fn(),
     openEdit: vi.fn(),

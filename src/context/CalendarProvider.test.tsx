@@ -11,9 +11,8 @@ function wrapper({ children }: { children: ReactNode }) {
 
 const lunch: AppointmentInput = {
   title: 'Lunch',
-  date: '2026-11-09',
-  start: '12:00',
-  end: '13:00',
+  start: '2026-11-09T12:00',
+  end: '2026-11-09T13:00',
 }
 
 function stored() {
@@ -75,8 +74,8 @@ describe('CalendarProvider', () => {
       saved = result.current.requestSave({
         ...lunch,
         title: 'Meeting',
-        start: '12:30',
-        end: '13:30',
+        start: '2026-11-09T12:30',
+        end: '2026-11-09T13:30',
       })
     })
 
@@ -85,8 +84,7 @@ describe('CalendarProvider', () => {
     expect(stored()).toEqual(before)
     expect(result.current.conflict).toMatchObject({
       isNew: true,
-      outOfDay: false,
-      suggestion: { start: '13:00', end: '14:00' },
+      suggestion: { start: '2026-11-09T13:00', end: '2026-11-09T14:00' },
     })
     expect(result.current.conflict?.conflicts).toEqual(before)
   })
@@ -98,7 +96,11 @@ describe('CalendarProvider', () => {
     })
     let saved = false
     act(() => {
-      saved = result.current.requestSave({ ...lunch, start: '13:00', end: '14:00' })
+      saved = result.current.requestSave({
+        ...lunch,
+        start: '2026-11-09T13:00',
+        end: '2026-11-09T14:00',
+      })
     })
     expect(saved).toBe(true)
     expect(result.current.appointments).toHaveLength(2)
@@ -118,17 +120,71 @@ describe('CalendarProvider', () => {
     expect(result.current.appointments).toHaveLength(1)
   })
 
-  it('flags an appointment that ends after 24:00', () => {
+  it('persists a multi-day appointment', () => {
+    const { result } = renderHook(() => useCalendar(), { wrapper })
+    const night = {
+      title: 'Night shift',
+      start: '2026-11-09T22:00',
+      end: '2026-11-10T02:00',
+    }
+    let saved = false
+    act(() => {
+      saved = result.current.requestSave(night)
+    })
+
+    expect(saved).toBe(true)
+    expect(result.current.appointments).toMatchObject([night])
+    expect(stored()).toMatchObject([night])
+  })
+
+  it('rejects an overlap with a multi-day appointment and leaves the data unchanged', () => {
     const { result } = renderHook(() => useCalendar(), { wrapper })
     act(() => {
-      result.current.requestSave({ ...lunch, start: '23:30', end: '24:30' })
+      result.current.requestSave({
+        title: 'Night shift',
+        start: '2026-11-09T22:00',
+        end: '2026-11-10T02:00',
+      })
     })
-    expect(result.current.appointments).toHaveLength(0)
-    expect(result.current.conflict).toMatchObject({
-      outOfDay: true,
-      conflicts: [],
-      suggestion: { start: '23:00', end: '24:00' },
+    const before = result.current.appointments
+
+    let saved = true
+    act(() => {
+      saved = result.current.requestSave({
+        title: 'Early call',
+        start: '2026-11-10T01:00',
+        end: '2026-11-10T03:00',
+      })
     })
+
+    expect(saved).toBe(false)
+    expect(result.current.appointments).toBe(before)
+    expect(stored()).toEqual(before)
+    expect(result.current.conflict?.conflicts).toEqual(before)
+    expect(result.current.conflict?.suggestion).toEqual({
+      start: '2026-11-10T02:00',
+      end: '2026-11-10T04:00',
+    })
+  })
+
+  it('allows back-to-back appointments across midnight', () => {
+    const { result } = renderHook(() => useCalendar(), { wrapper })
+    act(() => {
+      result.current.requestSave({
+        title: 'Night shift',
+        start: '2026-11-09T22:00',
+        end: '2026-11-10T00:00',
+      })
+    })
+    let saved = false
+    act(() => {
+      saved = result.current.requestSave({
+        title: 'Early call',
+        start: '2026-11-10T00:00',
+        end: '2026-11-10T01:00',
+      })
+    })
+    expect(saved).toBe(true)
   })
 
   it('applySuggestion saves the suggested time', () => {
@@ -137,7 +193,12 @@ describe('CalendarProvider', () => {
       result.current.requestSave(lunch)
     })
     act(() => {
-      result.current.requestSave({ ...lunch, title: 'Meeting', start: '12:30', end: '13:30' })
+      result.current.requestSave({
+        ...lunch,
+        title: 'Meeting',
+        start: '2026-11-09T12:30',
+        end: '2026-11-09T13:30',
+      })
     })
     act(() => result.current.applySuggestion())
 
@@ -145,8 +206,8 @@ describe('CalendarProvider', () => {
     expect(result.current.appointments).toHaveLength(2)
     expect(result.current.appointments[1]).toMatchObject({
       title: 'Meeting',
-      start: '13:00',
-      end: '14:00',
+      start: '2026-11-09T13:00',
+      end: '2026-11-09T14:00',
     })
     expect(stored()).toEqual(result.current.appointments)
   })
@@ -173,12 +234,21 @@ describe('CalendarProvider', () => {
       result.current.requestSave(lunch)
     })
     act(() => {
-      result.current.requestSave({ ...lunch, start: '15:00', end: '16:00' })
+      result.current.requestSave({
+        ...lunch,
+        start: '2026-11-09T15:00',
+        end: '2026-11-09T16:00',
+      })
     })
-    const moving = result.current.appointments.find((item) => item.start === '15:00')
+    const moving = result.current.appointments.find(
+      (item) => item.start === '2026-11-09T15:00',
+    )
     expect(moving).toBeDefined()
     act(() => {
-      result.current.requestSave({ ...lunch, start: '12:30', end: '13:30' }, moving?.id)
+      result.current.requestSave(
+        { ...lunch, start: '2026-11-09T12:30', end: '2026-11-09T13:30' },
+        moving?.id,
+      )
     })
     act(() => result.current.editConflict())
 
@@ -186,7 +256,7 @@ describe('CalendarProvider', () => {
     expect(result.current.form).toMatchObject({
       open: true,
       editingId: moving?.id,
-      values: { start: '12:30', end: '13:30' },
+      values: { start: '2026-11-09T12:30', end: '2026-11-09T13:30' },
     })
   })
 
@@ -207,7 +277,7 @@ describe('CalendarProvider', () => {
     expect(result.current.form).toMatchObject({
       open: true,
       editingId: null,
-      values: { date: '2026-11-12', start: '11:00', end: '12:00' },
+      values: { start: '2026-11-12T11:00', end: '2026-11-12T12:00' },
     })
 
     act(() => {
@@ -222,17 +292,40 @@ describe('CalendarProvider', () => {
     })
   })
 
-  it('clamps the create defaults so they end by 24:00', () => {
-    vi.setSystemTime(new Date(2026, 10, 12, 23, 30))
+  it('lets the create defaults cross midnight', () => {
+    vi.setSystemTime(new Date(2026, 10, 12, 22, 30))
     const { result } = renderHook(() => useCalendar(), { wrapper })
     act(() => result.current.openCreate())
-    expect(result.current.form.values).toMatchObject({ start: '23:45', end: '24:00' })
-
-    act(() => result.current.openCreate({ date: '2026-11-10', start: '23:00' }))
     expect(result.current.form.values).toMatchObject({
-      date: '2026-11-10',
-      start: '23:00',
-      end: '24:00',
+      start: '2026-11-12T23:00',
+      end: '2026-11-13T00:00',
+    })
+
+    vi.setSystemTime(new Date(2026, 10, 12, 23, 30))
+    act(() => result.current.openCreate())
+    expect(result.current.form.values).toMatchObject({
+      start: '2026-11-13T00:00',
+      end: '2026-11-13T01:00',
+    })
+  })
+
+  it('prefills a date-time and ends an hour later by default', () => {
+    const { result } = renderHook(() => useCalendar(), { wrapper })
+    act(() => result.current.openCreate({ start: '2026-11-10T23:00' }))
+    expect(result.current.form.values).toMatchObject({
+      start: '2026-11-10T23:00',
+      end: '2026-11-11T00:00',
+    })
+
+    act(() =>
+      result.current.openCreate({
+        start: '2026-11-10T09:00',
+        end: '2026-11-12T09:00',
+      }),
+    )
+    expect(result.current.form.values).toMatchObject({
+      start: '2026-11-10T09:00',
+      end: '2026-11-12T09:00',
     })
   })
 

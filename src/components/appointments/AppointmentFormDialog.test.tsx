@@ -8,9 +8,8 @@ const editing = {
   editingId: 'a1',
   values: {
     title: 'Standup',
-    date: '2026-11-09',
-    start: '09:00',
-    end: '09:30',
+    start: '2026-11-09T09:00',
+    end: '2026-11-09T09:30',
     notes: '',
   },
 }
@@ -33,18 +32,29 @@ describe('AppointmentFormDialog', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('shows the title error after blur and clears it when valid', async () => {
+  it('shows no error when an empty title is blurred', async () => {
     const user = userEvent.setup()
     renderWithCalendar(<AppointmentFormDialog />)
     const title = screen.getByLabelText('Title')
 
     await user.click(title)
-    expect(screen.queryByText('Title is required')).not.toBeInTheDocument()
     await user.tab()
+
+    expect(screen.queryByText('Title is required')).not.toBeInTheDocument()
+    expect(title).toHaveAttribute('aria-invalid', 'false')
+  })
+
+  it('shows the title error on Save without saving, and clears it when typing', async () => {
+    const user = userEvent.setup()
+    const value = renderWithCalendar(<AppointmentFormDialog />)
+    const title = screen.getByLabelText('Title')
+
+    await user.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText('Title is required')).toBeInTheDocument()
     expect(title).toHaveAttribute('aria-invalid', 'true')
     expect(title).toHaveAccessibleDescription('Title is required')
+    expect(value.requestSave).not.toHaveBeenCalled()
 
     await user.type(title, 'Lunch')
     expect(screen.queryByText('Title is required')).not.toBeInTheDocument()
@@ -53,48 +63,119 @@ describe('AppointmentFormDialog', () => {
 
   it('treats a whitespace-only title as missing', async () => {
     const user = userEvent.setup()
-    renderWithCalendar(<AppointmentFormDialog />)
+    const value = renderWithCalendar(<AppointmentFormDialog />)
 
     await user.type(screen.getByLabelText('Title'), '   ')
-    await user.tab()
+    await user.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText('Title is required')).toBeInTheDocument()
+    expect(value.requestSave).not.toHaveBeenCalled()
   })
 
-  it('shows the end error and blocks saving while End is not after Start', async () => {
+  it('shows the end error on Save when the end is not after the start', async () => {
     const user = userEvent.setup()
     const value = renderWithCalendar(<AppointmentFormDialog />)
 
     await user.type(screen.getByLabelText('Title'), 'Lunch')
-    const end = screen.getByLabelText('End')
-    fireEvent.change(end, { target: { value: '09:00' } })
-    fireEvent.blur(end)
-
-    expect(
-      await screen.findByText('End time must be after the start time'),
-    ).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('End time'), {
+      target: { value: '09:00' },
+    })
+    expect(screen.queryByText('End must be after the start')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('End must be after the start')).toBeInTheDocument()
+    expect(screen.getByLabelText('End time')).toHaveAccessibleDescription(
+      'End must be after the start',
+    )
     expect(value.requestSave).not.toHaveBeenCalled()
   })
 
-  it('re-validates End when Start changes', async () => {
-    renderWithCalendar(<AppointmentFormDialog />)
-    const end = screen.getByLabelText('End')
-    fireEvent.change(end, { target: { value: '09:00' } })
-    fireEvent.blur(end)
-    expect(
-      await screen.findByText('End time must be after the start time'),
-    ).toBeInTheDocument()
+  it('rejects an end date before the start date', async () => {
+    const user = userEvent.setup()
+    const value = renderWithCalendar(<AppointmentFormDialog />)
 
-    fireEvent.change(screen.getByLabelText('Start'), {
+    await user.type(screen.getByLabelText('Title'), 'Lunch')
+    fireEvent.change(screen.getByLabelText('End date'), {
+      target: { value: '2026-11-08' },
+    })
+    fireEvent.change(screen.getByLabelText('End time'), {
+      target: { value: '12:00' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('End must be after the start')).toBeInTheDocument()
+    expect(value.requestSave).not.toHaveBeenCalled()
+  })
+
+  it('clears the end error once the end date moves to a later day', async () => {
+    const user = userEvent.setup()
+    renderWithCalendar(<AppointmentFormDialog />)
+
+    await user.type(screen.getByLabelText('Title'), 'Lunch')
+    fireEvent.change(screen.getByLabelText('End time'), {
+      target: { value: '09:00' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(await screen.findByText('End must be after the start')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('End date'), {
+      target: { value: '2026-11-10' },
+    })
+
+    await vi.waitFor(() =>
+      expect(
+        screen.queryByText('End must be after the start'),
+      ).not.toBeInTheDocument(),
+    )
+  })
+
+  it('re-validates the end time when the start time changes after a failed Save', async () => {
+    const user = userEvent.setup()
+    renderWithCalendar(<AppointmentFormDialog />)
+
+    await user.type(screen.getByLabelText('Title'), 'Lunch')
+    fireEvent.change(screen.getByLabelText('End time'), {
+      target: { value: '09:00' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(await screen.findByText('End must be after the start')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Start time'), {
       target: { value: '08:00' },
     })
 
     await vi.waitFor(() =>
       expect(
-        screen.queryByText('End time must be after the start time'),
+        screen.queryByText('End must be after the start'),
       ).not.toBeInTheDocument(),
+    )
+  })
+
+  it('submits the combined date-times of a multi-day appointment', async () => {
+    const user = userEvent.setup()
+    const value = renderWithCalendar(<AppointmentFormDialog />)
+
+    await user.type(screen.getByLabelText('Title'), 'Night shift')
+    fireEvent.change(screen.getByLabelText('Start time'), {
+      target: { value: '22:00' },
+    })
+    fireEvent.change(screen.getByLabelText('End date'), {
+      target: { value: '2026-11-10' },
+    })
+    fireEvent.change(screen.getByLabelText('End time'), {
+      target: { value: '02:00' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(value.requestSave).toHaveBeenCalledWith(
+      {
+        title: 'Night shift',
+        start: '2026-11-09T22:00',
+        end: '2026-11-10T02:00',
+        notes: '',
+      },
+      undefined,
     )
   })
 
@@ -123,9 +204,8 @@ describe('AppointmentFormDialog', () => {
     expect(value.requestSave).toHaveBeenCalledWith(
       {
         title: 'Planning',
-        date: '2026-11-09',
-        start: '09:00',
-        end: '09:30',
+        start: '2026-11-09T09:00',
+        end: '2026-11-09T09:30',
         notes: 'agenda',
       },
       'a1',
