@@ -16,7 +16,7 @@ export function DayHeader({ date }: DayHeaderProps) {
       data-today={today}
       className={cn(
         DAY_HEADER_HEIGHT_CLASS,
-        'sticky top-0 z-20 flex flex-col items-center justify-center rounded-md border-b bg-background text-sm',
+        'sticky top-0 z-20 flex flex-col items-center justify-center border-b bg-background text-sm',
         today && 'bg-primary text-primary-foreground',
       )}
     >

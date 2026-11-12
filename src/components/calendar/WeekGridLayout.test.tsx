@@ -63,10 +63,27 @@ describe('WeekGrid layout', () => {
     expect(scroller?.scrollTop).toBe(DEFAULT_SCROLL_HOUR * HOUR_HEIGHT_PX)
   })
 
-  it('uses the responsive grid classes', () => {
+  it('uses the responsive grid classes with no gap and column lines', () => {
     renderGrid()
     const grid = screen.getByTestId('week-hour-gutter').parentElement
-    expect(grid).toHaveClass('grid-cols-1', 'gap-1')
+    expect(grid).toHaveClass('grid-cols-1')
     expect(grid).toHaveClass('md:grid-cols-[auto_repeat(7,minmax(0,1fr))]')
+    expect(grid).toHaveClass('md:divide-x')
+    expect(grid?.className).not.toMatch(/(^|\s)(md:)?gap-/)
+  })
+
+  it('draws a line between the gutter and the body of each stacked day', () => {
+    renderGrid()
+    const column = screen.getByRole('region', { name: '2026-11-09' })
+    const body = column.querySelector('.relative')
+    expect(body).toHaveClass('border-l')
+  })
+
+  it('renders flat day headers with a bottom border', () => {
+    renderGrid()
+    for (const heading of screen.getAllByRole('heading', { level: 2 })) {
+      expect(heading).toHaveClass('border-b')
+      expect(heading).not.toHaveClass('rounded-md')
+    }
   })
 })

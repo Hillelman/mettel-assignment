@@ -62,13 +62,24 @@ describe('WeekGrid', () => {
     expect(headings[6]).toHaveTextContent('15')
   })
 
-  it('renders 24 hour labels in the shared gutter', () => {
+  it('renders 25 hour labels, 00:00 to 24:00, in the shared gutter', () => {
     renderGrid()
     const gutter = within(screen.getByTestId('week-hour-gutter'))
     const labels = gutter.getAllByText(/^\d{2}:00$/).map((el) => el.textContent)
-    expect(labels).toHaveLength(24)
+    expect(labels).toHaveLength(25)
     expect(labels[0]).toBe('00:00')
     expect(labels[23]).toBe('23:00')
+    expect(labels[24]).toBe('24:00')
+  })
+
+  it('renders a 24:00 label in every stacked day gutter', () => {
+    renderGrid()
+    for (const date of ['2026-11-09', '2026-11-15']) {
+      const day = within(screen.getByRole('region', { name: date }))
+      const labels = day.getAllByText(/^\d{2}:00$/).map((el) => el.textContent)
+      expect(labels).toHaveLength(25)
+      expect(labels[24]).toBe('24:00')
+    }
   })
 
   it('renders an empty week as clickable slots', async () => {
@@ -115,10 +126,25 @@ describe('WeekGrid', () => {
     expect(calendar.openCreate).not.toHaveBeenCalled()
   })
 
-  it('does not open edit when the resize handle is clicked', async () => {
+  it('does not open edit when a resize handle is clicked', async () => {
     const calendar = renderGrid([review])
-    await userEvent.click(screen.getByRole('button', { name: 'Resize Review' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Resize start of Review' }),
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Resize end of Review' }),
+    )
     expect(calendar.openEdit).not.toHaveBeenCalled()
+  })
+
+  it('offers a top and a bottom handle on a single-day card', () => {
+    renderGrid([review])
+    expect(
+      screen.getByRole('button', { name: 'Resize start of Review' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Resize end of Review' }),
+    ).toBeInTheDocument()
   })
 
   it('shows overlapping stored appointments side by side at half width', () => {
@@ -179,17 +205,25 @@ describe('WeekGrid', () => {
       ).not.toBeInTheDocument()
     })
 
-    it('offers the resize handle on the last segment only', () => {
+    it('offers the top handle on the first segment and the bottom handle on the last', () => {
       renderGrid([night])
       const monday = within(screen.getByRole('region', { name: '2026-11-09' }))
       const tuesday = within(screen.getByRole('region', { name: '2026-11-10' }))
+      const top = { name: 'Resize start of Night shift' }
+      const bottom = { name: 'Resize end of Night shift' }
 
+      expect(monday.getByRole('button', top)).toBeInTheDocument()
+      expect(monday.queryByRole('button', bottom)).not.toBeInTheDocument()
+      expect(tuesday.queryByRole('button', top)).not.toBeInTheDocument()
+      expect(tuesday.getByRole('button', bottom)).toBeInTheDocument()
+    })
+
+    it('offers no handles on a middle segment', () => {
+      renderGrid([{ ...night, end: '2026-11-11T02:00' }])
+      const tuesday = within(screen.getByRole('region', { name: '2026-11-10' }))
       expect(
-        monday.queryByRole('button', { name: 'Resize Night shift' }),
+        tuesday.queryByRole('button', { name: /^Resize/ }),
       ).not.toBeInTheDocument()
-      expect(
-        tuesday.getByRole('button', { name: 'Resize Night shift' }),
-      ).toBeInTheDocument()
     })
 
     it('renders only the start day when the end is the next 00:00', () => {
